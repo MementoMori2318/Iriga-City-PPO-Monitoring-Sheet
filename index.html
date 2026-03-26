@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Iriga PPO - Attendance Monitoring System</title>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -64,7 +66,35 @@
             font-size: 14px;
         }
         
-        /* SCANNER BUTTON */
+        .signin-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .signout-btn {
+            background: #dc3545;
+            padding: 6px 12px;
+            font-size: 12px;
+            width: auto;
+            border-radius: 20px;
+        }
+        
+        .signout-btn:hover {
+            background: #c82333;
+        }
+        
+        /* Google Sign-In Button Styling */
+        .g_id_signin {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        /* Scanner Button */
         .scanner-area {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -82,6 +112,12 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         
+        .scanner-area.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
         .scanner-icon {
             font-size: 64px;
             margin-bottom: 15px;
@@ -92,7 +128,7 @@
             margin-bottom: 8px;
         }
         
-        /* FULL SCREEN SCANNER MODAL */
+        /* Full Screen Scanner Modal */
         .scanner-modal {
             display: none;
             position: fixed;
@@ -309,6 +345,12 @@
             border: 1px solid #bee5eb;
         }
         
+        .message-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+        
         .config-section {
             background: #fff3cd;
             border: 1px solid #ffc107;
@@ -337,6 +379,14 @@
             text-decoration: none;
         }
         
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        
         @media (max-width: 640px) {
             .info-label {
                 width: 110px;
@@ -363,11 +413,34 @@
                 <button id="saveUrlBtn" style="background: #28a745; margin-top: 8px;">Save URL</button>
             </div>
             
-            <!-- Employee Section -->
+            <!-- Employee Section with Google Sign-In -->
             <div class="employee-section">
-                <strong>👤 Officer Email:</strong>
-                <div class="employee-email" id="employeeEmailDisplay">Not authenticated</div>
-                <button id="authBtn" style="margin-top: 10px; padding: 8px 16px; width: auto;">Authenticate</button>
+                <strong>👤 Officer Authentication</strong>
+                <div id="authContainer">
+                    <div id="g_id_onload"
+                         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                         data-callback="handleGoogleSignIn"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-size="large"
+                         data-theme="outline"
+                         data-text="sign_in_with"
+                         data-shape="rectangular"
+                         data-logo_alignment="left">
+                    </div>
+                    <div id="userInfo" style="display: none;">
+                        <div class="signin-status">
+                            <div>
+                                <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+                                <span id="userEmailDisplay" class="employee-email"></span>
+                            </div>
+                            <button id="signoutBtn" class="signout-btn">Sign Out</button>
+                        </div>
+                        <div id="authStatus" style="font-size: 12px; color: #28a745; margin-top: 8px;">✓ Authenticated</div>
+                    </div>
+                </div>
             </div>
             
             <!-- Scanner Button -->
@@ -412,7 +485,7 @@
                 </div>
             </div>
             
-            <!-- Attendance Form (Remarks, Family Support, Notes) -->
+            <!-- Attendance Form -->
             <form id="attendanceForm" style="display: none;">
                 <div class="form-group">
                     <label>REMARKS (Attendance Type) *</label>
@@ -473,10 +546,10 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         // CONFIGURATION
-        // Set your Apps Script URL directly
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec';
-        let storedUrl = localStorage.getItem('appsScriptUrl');
-        let finalUrl = storedUrl || APPS_SCRIPT_URL;
+        let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || '';
+        let authenticatedEmployee = null;
+        let currentPUSData = null;
+        let googleUser = null;
         
         // Camera variables
         let videoStream = null;
@@ -485,8 +558,11 @@
         let scanningActive = false;
         
         // DOM Elements
-        const employeeEmailDisplay = document.getElementById('employeeEmailDisplay');
-        const authBtn = document.getElementById('authBtn');
+        const authContainer = document.getElementById('authContainer');
+        const userInfo = document.getElementById('userInfo');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const userAvatar = document.getElementById('userAvatar');
+        const signoutBtn = document.getElementById('signoutBtn');
         const scannerTrigger = document.getElementById('scannerTrigger');
         const scannerModal = document.getElementById('scannerModal');
         const scannerVideo = document.getElementById('scannerVideo');
@@ -498,6 +574,86 @@
         const scriptUrlInput = document.getElementById('scriptUrlInput');
         const saveUrlBtn = document.getElementById('saveUrlBtn');
         const adminLink = document.getElementById('adminLink');
+        
+        // Google Sign-In Handler
+        window.handleGoogleSignIn = function(response) {
+            console.log('Google Sign-In response:', response);
+            
+            // Decode the JWT token to get user info
+            const payload = parseJwt(response.credential);
+            console.log('User payload:', payload);
+            
+            if (payload && payload.email) {
+                googleUser = {
+                    email: payload.email,
+                    name: payload.name,
+                    picture: payload.picture,
+                    sub: payload.sub
+                };
+                
+                authenticatedEmployee = googleUser.email;
+                localStorage.setItem('employeeEmail', authenticatedEmployee);
+                
+                // Update UI
+                userEmailDisplay.textContent = authenticatedEmployee;
+                userAvatar.src = googleUser.picture || 'https://via.placeholder.com/32';
+                
+                // Hide Google Sign-In button, show user info
+                document.querySelector('.g_id_signin').style.display = 'none';
+                userInfo.style.display = 'block';
+                
+                showMessage(`✓ Signed in as ${googleUser.name} (${authenticatedEmployee})`, 'success');
+                
+                // Enable scanner
+                scannerTrigger.classList.remove('disabled');
+            }
+        };
+        
+        // Parse JWT token
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error('Error parsing JWT:', e);
+                return null;
+            }
+        }
+        
+        // Sign out
+        function signOut() {
+            authenticatedEmployee = null;
+            googleUser = null;
+            localStorage.removeItem('employeeEmail');
+            
+            // Show Google Sign-In button
+            document.querySelector('.g_id_signin').style.display = 'flex';
+            userInfo.style.display = 'none';
+            
+            // Clear any scanned data
+            pusInfoSection.style.display = 'none';
+            attendanceForm.style.display = 'none';
+            currentPUSData = null;
+            
+            showMessage('Signed out successfully', 'info');
+        }
+        
+        signoutBtn.addEventListener('click', signOut);
+        
+        // Check for saved authentication
+        function loadSavedAuth() {
+            const savedEmail = localStorage.getItem('employeeEmail');
+            if (savedEmail && googleUser) {
+                authenticatedEmployee = savedEmail;
+                userEmailDisplay.textContent = savedEmail;
+                userInfo.style.display = 'block';
+                document.querySelector('.g_id_signin').style.display = 'none';
+            }
+        }
         
         // Admin settings
         adminLink.addEventListener('click', function(e) {
@@ -518,41 +674,17 @@
             }
         });
         
-        // Load saved auth
-        function loadSavedAuth() {
-            const savedEmail = localStorage.getItem('employeeEmail');
-            if (savedEmail) {
-                authenticatedEmployee = savedEmail;
-                employeeEmailDisplay.textContent = savedEmail;
-                authBtn.textContent = 'Change Account';
-            }
-        }
-        
-        function authenticateEmployee() {
-            const email = prompt('Enter your registered employee email:', authenticatedEmployee || '');
-            if (email && email.trim()) {
-                authenticatedEmployee = email.trim();
-                localStorage.setItem('employeeEmail', authenticatedEmployee);
-                employeeEmailDisplay.textContent = authenticatedEmployee;
-                authBtn.textContent = 'Change Account';
-                showMessage('✓ Authentication successful!', 'success');
-            }
-        }
-        
-        authBtn.addEventListener('click', authenticateEmployee);
-        
         // OPEN FULL SCREEN SCANNER
         async function openScanner() {
+            if (!authenticatedEmployee) {
+                showMessage('⚠️ Please sign in with your Google account first.', 'warning');
+                return;
+            }
+            
             if (!APPS_SCRIPT_URL) {
                 showMessage('⚠️ Please configure Google Apps Script URL in Admin Settings first.', 'info');
                 configSection.style.display = 'block';
                 return;
-            }
-            
-            if (!authenticatedEmployee) {
-                showMessage('Please authenticate first.', 'error');
-                authenticateEmployee();
-                if (!authenticatedEmployee) return;
             }
             
             scannerModal.style.display = 'flex';
@@ -671,7 +803,7 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        pusData = result.pus;
+                        pusData = result.client || result.pus;
                     }
                 }
                 
@@ -694,8 +826,8 @@
         
         // Display PUS info
         function displayPUSInfo(pus) {
-            document.getElementById('displayPUSId').textContent = pus.pusId || 'N/A';
-            document.getElementById('displayPUSName').textContent = pus.pusName || 'N/A';
+            document.getElementById('displayPUSId').textContent = pus.pusId || pus.clientId || 'N/A';
+            document.getElementById('displayPUSName').textContent = pus.pusName || pus.clientName || 'N/A';
             document.getElementById('displayGenderAge').textContent = `${pus.gender || 'N/A'} / ${pus.age || 'N/A'} years`;
             document.getElementById('displayOffense').textContent = pus.offenseCategory || 'N/A';
             document.getElementById('displayPeriod').textContent = `${pus.startDate || 'N/A'} to ${pus.endDate || 'N/A'}`;
@@ -713,7 +845,7 @@
             }
             
             if (!authenticatedEmployee) {
-                showMessage('Please authenticate first.', 'error');
+                showMessage('Please sign in first.', 'error');
                 return;
             }
             
@@ -727,8 +859,8 @@
             
             const attendanceData = {
                 employeeEmail: authenticatedEmployee,
-                clientName: currentPUSData.pusName,  // Send as clientName
-                clientId: currentPUSData.pusId,       // Send as clientId
+                clientName: currentPUSData.pusName || currentPUSData.clientName,
+                clientId: currentPUSData.pusId || currentPUSData.clientId,
                 gender: currentPUSData.gender,
                 age: currentPUSData.age,
                 offenseCategory: currentPUSData.offenseCategory,
@@ -784,9 +916,13 @@
         window.switchCamera = switchCamera;
         window.toggleTorch = toggleTorch;
         window.closeScanner = closeScanner;
+        window.handleGoogleSignIn = handleGoogleSignIn;
         
         // Initialize
         loadSavedAuth();
+        
+        // Disable scanner until authenticated
+        scannerTrigger.classList.add('disabled');
     </script>
 </body>
 </html>
