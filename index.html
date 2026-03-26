@@ -28,13 +28,14 @@
         .message { padding: 12px; border-radius: 10px; margin-top: 15px; text-align: center; }
         .message-success { background: #d4edda; color: #155724; }
         .message-error { background: #f8d7da; color: #721c24; }
+        .message-info { background: #d1ecf1; color: #0c5460; }
         .config-section { background: #fff3cd; padding: 12px; border-radius: 10px; margin-bottom: 15px; display: none; }
         .admin-link { text-align: center; margin-top: 20px; font-size: 12px; }
         .authorized-only { display: none; }
         .scanner-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; }
         #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
         .close-scanner { position: absolute; top: 20px; right: 20px; background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 25px; z-index: 1001; cursor: pointer; width: auto; }
-        .debug-info { background: #f8f9fa; padding: 10px; margin-top: 10px; border-radius: 8px; font-family: monospace; font-size: 11px; word-break: break-all; display: none; }
+        @media (max-width: 640px) { .info-label { width: 100px; } }
     </style>
 </head>
 <body>
@@ -55,7 +56,6 @@
                 <h2>🔐 Officer Login</h2>
                 <p style="margin: 10px 0;">Sign in with your Google account</p>
                 <div id="g_id_signin"></div>
-                <div id="debugInfo" class="debug-info"></div>
             </div>
             
             <div id="userInfo" class="user-info">
@@ -89,21 +89,27 @@
                         <select id="remarks" required>
                             <option value="Individual Reporting">Individual Reporting</option>
                             <option value="TC Attendance">TC Attendance</option>
+                            <option value="Request for Permit to Travel">Request for Permit to Travel</option>
+                            <option value="Make-up Attendance">Make-up Attendance</option>
                             <option value="Home Visit">Home Visit</option>
+                            <option value="Community Service">Community Service</option>
                         </select>
                     </div>
+                    
                     <div class="form-group">
-                        <label>FAMILY SUPPORT *</label>
+                        <label>WITH FAMILY SUPPORT GROUP *</label>
                         <select id="familySupport" required>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                            <option value="Partial">Partial</option>
+                            <option value="Yes">Yes - Family member/s present</option>
+                            <option value="No">No - No family support</option>
+                            <option value="Partial">Partial - Limited involvement</option>
                         </select>
                     </div>
+                    
                     <div class="form-group">
-                        <label>NOTES</label>
-                        <textarea id="notes" rows="3"></textarea>
+                        <label>NOTES (Observations / Interventions)</label>
+                        <textarea id="notes" rows="3" placeholder="Enter any observations or recommendations..."></textarea>
                     </div>
+                    
                     <button type="submit" id="submitBtn">✅ Record Attendance</button>
                 </form>
             </div>
@@ -111,8 +117,8 @@
             <div id="messageArea"></div>
             
             <div class="admin-link">
-                <a href="#" id="adminLink">⚙️ Settings</a> | 
-                <a href="qr-generator.html">📱 QR Generator</a>
+                <a href="#" id="adminLink">⚙️ Admin Settings</a> | 
+                <a href="qr-generator.html">📱 Generate QR Codes</a>
             </div>
         </div>
     </div>
@@ -126,11 +132,13 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         // ============================================
-        // PUT YOUR GOOGLE CLIENT ID HERE
+        // WORKING GOOGLE CLIENT ID - TESTED AND WORKING
         // ============================================
         const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
         
-        const AUTHORIZED_EMAILS = ['iace2318i@gmail.com'];
+        const AUTHORIZED_EMAILS = [
+            'iace2318i@gmail.com'
+        ];
         
         let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || '';
         let currentUser = null;
@@ -155,50 +163,28 @@
         const scriptUrlInput = document.getElementById('scriptUrlInput');
         const saveUrlBtn = document.getElementById('saveUrlBtn');
         const adminLink = document.getElementById('adminLink');
-        const debugInfo = document.getElementById('debugInfo');
-        
-        // Show debug info
-        function showDebug(message) {
-            debugInfo.style.display = 'block';
-            debugInfo.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
-            console.log(message);
-        }
         
         // Initialize Google Sign-In
         function initGoogleSignIn() {
-            showDebug(`Initializing with Client ID: ${GOOGLE_CLIENT_ID.substring(0, 30)}...`);
+            console.log('Initializing with Client ID:', GOOGLE_CLIENT_ID);
             
-            if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === '') {
-                showDebug('ERROR: No Client ID set!');
-                return;
-            }
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse,
+                auto_select: false
+            });
             
-            try {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleCredentialResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: true
-                });
-                
-                google.accounts.id.renderButton(
-                    document.getElementById('g_id_signin'),
-                    { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', width: 300 }
-                );
-                
-                showDebug('Google Sign-In initialized successfully');
-            } catch (error) {
-                showDebug(`ERROR initializing: ${error.message}`);
-            }
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_signin'),
+                { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', width: 300 }
+            );
         }
         
         // Handle login response
         function handleCredentialResponse(response) {
-            showDebug('Login response received');
             try {
                 const payload = JSON.parse(atob(response.credential.split('.')[1]));
                 const userEmail = payload.email;
-                showDebug(`User email: ${userEmail}`);
                 
                 if (AUTHORIZED_EMAILS.includes(userEmail)) {
                     currentUser = {
@@ -214,14 +200,11 @@
                     
                     localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
                     showMessage(`Welcome ${currentUser.name || currentUser.email}!`, 'success');
-                    showDebug('Login successful');
                 } else {
-                    showDebug(`Unauthorized: ${userEmail} not in authorized list`);
                     showMessage('Unauthorized: Email not registered in PPO system', 'error');
                     google.accounts.id.disableAutoSelect();
                 }
             } catch (e) {
-                showDebug(`Login error: ${e.message}`);
                 showMessage('Login failed', 'error');
             }
         }
@@ -237,7 +220,6 @@
                     userInfo.style.display = 'flex';
                     loginSection.style.display = 'none';
                     mainContent.style.display = 'block';
-                    showDebug(`Session restored for: ${user.email}`);
                 } else {
                     localStorage.removeItem('loggedInUser');
                 }
@@ -254,7 +236,6 @@
             pusInfoSection.style.display = 'none';
             attendanceForm.style.display = 'none';
             showMessage('Logged out', 'info');
-            showDebug('User logged out');
         }
         
         logoutBtn.addEventListener('click', logout);
@@ -266,6 +247,7 @@
                 configSection.style.display = 'block';
                 return;
             }
+            
             scannerModal.style.display = 'block';
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -310,6 +292,7 @@
             try {
                 const data = JSON.parse(qrData);
                 currentPUSData = data;
+                
                 document.getElementById('displayPUSId').textContent = data.pusId || data.clientId || 'N/A';
                 document.getElementById('displayPUSName').textContent = data.pusName || data.clientName || 'N/A';
                 document.getElementById('displayGenderAge').textContent = `${data.gender || 'N/A'} / ${data.age || 'N/A'}`;
@@ -317,9 +300,10 @@
                 document.getElementById('displayPeriod').textContent = `${data.startDate || 'N/A'} to ${data.endDate || 'N/A'}`;
                 document.getElementById('displayOfficer').textContent = data.supervisingOfficer || 'N/A';
                 document.getElementById('displayCluster').textContent = data.cluster || 'N/A';
+                
                 pusInfoSection.style.display = 'block';
                 attendanceForm.style.display = 'block';
-                showMessage('✓ PUS loaded', 'success');
+                showMessage('✓ PUS loaded. Record attendance.', 'success');
             } catch (e) {
                 showMessage('Invalid QR code', 'error');
             }
@@ -351,8 +335,14 @@
             };
             
             try {
-                await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(attendanceData), headers: { 'Content-Type': 'application/json' } });
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(attendanceData),
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 showMessage('✓ Attendance recorded!', 'success');
+                
                 setTimeout(() => {
                     pusInfoSection.style.display = 'none';
                     attendanceForm.style.display = 'none';
@@ -372,6 +362,7 @@
             setTimeout(() => { if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = ''; }, 4000);
         }
         
+        // Admin settings
         adminLink.onclick = (e) => {
             e.preventDefault();
             configSection.style.display = configSection.style.display === 'none' ? 'block' : 'none';
@@ -394,14 +385,11 @@
         
         // Initialize
         checkSession();
-        showDebug(`Client ID: ${GOOGLE_CLIENT_ID.substring(0, 40)}...`);
-        showDebug(`Authorized emails: ${AUTHORIZED_EMAILS.join(', ')}`);
         
         if (typeof google !== 'undefined' && google.accounts) {
             initGoogleSignIn();
         } else {
-            showDebug('Waiting for Google library to load...');
-            window.addEventListener('load', () => setTimeout(initGoogleSignIn, 1000));
+            window.addEventListener('load', () => setTimeout(initGoogleSignIn, 500));
         }
     </script>
 </body>
