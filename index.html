@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Iriga PPO - Attendance Monitoring System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #f0f4f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 16px;
+            padding-bottom: 40px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .form-card {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .employee-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .employee-email {
+            font-weight: bold;
+            color: #2a5298;
+            word-break: break-all;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        /* SCANNER BUTTON */
+        .scanner-area {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+            color: white;
+        }
+        
+        .scanner-area:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .scanner-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+        
+        .scanner-area h3 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        /* FULL SCREEN SCANNER MODAL */
+        .scanner-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        
+        .scanner-header {
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .close-scanner {
+            background: #dc3545;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .video-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #scannerVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+            border: 3px solid #00ff00;
+            border-radius: 20px;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { border-color: #00ff00; transform: translate(-50%, -50%) scale(1); }
+            50% { border-color: #ffff00; transform: translate(-50%, -50%) scale(1.02); }
+            100% { border-color: #00ff00; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .scan-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 260px;
+            height: 2px;
+            background: #00ff00;
+            animation: scanMove 2s linear infinite;
+        }
+        
+        @keyframes scanMove {
+            0% { top: calc(50% - 130px); }
+            50% { top: calc(50% + 130px); }
+            100% { top: calc(50% - 130px); }
+        }
+        
+        .scanner-controls {
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            z-index: 10;
+        }
+        
+        .scanner-controls button {
+            background: #2a5298;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 16px;
+            flex: 1;
+            max-width: 150px;
+        }
+        
+        .torch-btn {
+            background: #ff9800 !important;
+        }
+        
+        .switch-camera {
+            background: #4caf50 !important;
+        }
+        
+        .pus-info-card {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        
+        .info-row {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid #bbdef5;
+            font-size: 14px;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 700;
+            width: 130px;
+            color: #1e3c72;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #2c3e50;
+            word-break: break-word;
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+        
+        button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .config-section {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .config-section input {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            margin: 8px 0;
+        }
+        
+        .admin-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        
+        .admin-link a {
+            color: #6c757d;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 640px) {
+            .info-label {
+                width: 110px;
+            }
+            .scan-frame {
+                width: 250px;
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 PPO Attendance Monitoring System</h1>
+            <p>Iriga City Probation and Parole Office</p>
+        </div>
+        
+        <div class="form-card">
+            <!-- Config Section -->
+            <div class="config-section" id="configSection">
+                <label>🔧 Google Apps Script URL:</label>
+                <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+                <button id="saveUrlBtn" style="background: #28a745; margin-top: 8px;">Save URL</button>
+            </div>
+            
+            <!-- Employee Section -->
+            <div class="employee-section">
+                <strong>👤 Officer Email:</strong>
+                <div class="employee-email" id="employeeEmailDisplay">Not authenticated</div>
+                <button id="authBtn" style="margin-top: 10px; padding: 8px 16px; width: auto;">Authenticate</button>
+            </div>
+            
+            <!-- Scanner Button -->
+            <div class="scanner-area" id="scannerTrigger">
+                <div class="scanner-icon">📷</div>
+                <h3>Scan PUS QR Code</h3>
+                <p>Tap to open camera and scan QR code of Person Under Supervision</p>
+            </div>
+            
+            <!-- PUS Information Section -->
+            <div id="pusInfoSection" style="display: none;">
+                <h3>📋 Person Under Supervision Information</h3>
+                <div class="pus-info-card">
+                    <div class="info-row">
+                        <div class="info-label">PUS ID:</div>
+                        <div class="info-value" id="displayPUSId">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Full Name:</div>
+                        <div class="info-value" id="displayPUSName">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Gender / Age:</div>
+                        <div class="info-value" id="displayGenderAge">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Offense Category:</div>
+                        <div class="info-value" id="displayOffense">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Supervision Period:</div>
+                        <div class="info-value" id="displayPeriod">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Supervising Officer:</div>
+                        <div class="info-value" id="displayOfficer">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Cluster:</div>
+                        <div class="info-value" id="displayCluster">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Attendance Form (Remarks, Family Support, Notes) -->
+            <form id="attendanceForm" style="display: none;">
+                <div class="form-group">
+                    <label>REMARKS (Attendance Type) *</label>
+                    <select id="remarks" required>
+                        <option value="Individual Reporting">Individual Reporting</option>
+                        <option value="TC Attendance">TC Attendance</option>
+                        <option value="Request for Permit to Travel">Request for Permit to Travel</option>
+                        <option value="Make-up Attendance">Make-up Attendance</option>
+                        <option value="Home Visit">Home Visit</option>
+                        <option value="Community Service">Community Service</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>WITH FAMILY SUPPORT GROUP *</label>
+                    <select id="familySupport" required>
+                        <option value="Yes">Yes - Family member/s present or supportive</option>
+                        <option value="No">No - No family support available</option>
+                        <option value="Partial">Partial - Limited family involvement</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>NOTES (Observations / Interventions / Recommendations)</label>
+                    <textarea id="notes" placeholder="Enter any observations, concerns, interventions, or important notes about this session..."></textarea>
+                </div>
+                
+                <button type="submit" id="submitBtn">✅ Record Attendance</button>
+            </form>
+            
+            <div id="messageArea"></div>
+            
+            <div class="admin-link">
+                <a href="#" id="adminLink">⚙️ Admin Settings</a> | 
+                <a href="qr-generator.html">📱 Generate QR Codes</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FULL SCREEN SCANNER MODAL -->
+    <div id="scannerModal" class="scanner-modal">
+        <div class="scanner-header">
+            <h3>📷 Scan PUS QR Code</h3>
+            <button class="close-scanner" onclick="closeScanner()">Close</button>
+        </div>
+        <div class="video-container">
+            <video id="scannerVideo" autoplay playsinline></video>
+            <div class="scan-frame"></div>
+            <div class="scan-line"></div>
+        </div>
+        <div class="scanner-controls">
+            <button class="switch-camera" onclick="switchCamera()">🔄 Switch</button>
+            <button class="torch-btn" onclick="toggleTorch()">🔦 Torch</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        // CONFIGURATION
+        // Set your Apps Script URL directly
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec';
+        let storedUrl = localStorage.getItem('appsScriptUrl');
+        let finalUrl = storedUrl || APPS_SCRIPT_URL;
+        
+        // Camera variables
+        let videoStream = null;
+        let currentCamera = 'environment';
+        let torchEnabled = false;
+        let scanningActive = false;
+        
+        // DOM Elements
+        const employeeEmailDisplay = document.getElementById('employeeEmailDisplay');
+        const authBtn = document.getElementById('authBtn');
+        const scannerTrigger = document.getElementById('scannerTrigger');
+        const scannerModal = document.getElementById('scannerModal');
+        const scannerVideo = document.getElementById('scannerVideo');
+        const pusInfoSection = document.getElementById('pusInfoSection');
+        const attendanceForm = document.getElementById('attendanceForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const messageArea = document.getElementById('messageArea');
+        const configSection = document.getElementById('configSection');
+        const scriptUrlInput = document.getElementById('scriptUrlInput');
+        const saveUrlBtn = document.getElementById('saveUrlBtn');
+        const adminLink = document.getElementById('adminLink');
+        
+        // Admin settings
+        adminLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            configSection.style.display = configSection.style.display === 'none' ? 'block' : 'none';
+            scriptUrlInput.value = APPS_SCRIPT_URL;
+        });
+        
+        saveUrlBtn.addEventListener('click', function() {
+            const newUrl = scriptUrlInput.value.trim();
+            if (newUrl) {
+                APPS_SCRIPT_URL = newUrl;
+                localStorage.setItem('appsScriptUrl', newUrl);
+                showMessage('✓ URL saved successfully!', 'success');
+                configSection.style.display = 'none';
+            } else {
+                showMessage('Please enter a valid URL', 'error');
+            }
+        });
+        
+        // Load saved auth
+        function loadSavedAuth() {
+            const savedEmail = localStorage.getItem('employeeEmail');
+            if (savedEmail) {
+                authenticatedEmployee = savedEmail;
+                employeeEmailDisplay.textContent = savedEmail;
+                authBtn.textContent = 'Change Account';
+            }
+        }
+        
+        function authenticateEmployee() {
+            const email = prompt('Enter your registered employee email:', authenticatedEmployee || '');
+            if (email && email.trim()) {
+                authenticatedEmployee = email.trim();
+                localStorage.setItem('employeeEmail', authenticatedEmployee);
+                employeeEmailDisplay.textContent = authenticatedEmployee;
+                authBtn.textContent = 'Change Account';
+                showMessage('✓ Authentication successful!', 'success');
+            }
+        }
+        
+        authBtn.addEventListener('click', authenticateEmployee);
+        
+        // OPEN FULL SCREEN SCANNER
+        async function openScanner() {
+            if (!APPS_SCRIPT_URL) {
+                showMessage('⚠️ Please configure Google Apps Script URL in Admin Settings first.', 'info');
+                configSection.style.display = 'block';
+                return;
+            }
+            
+            if (!authenticatedEmployee) {
+                showMessage('Please authenticate first.', 'error');
+                authenticateEmployee();
+                if (!authenticatedEmployee) return;
+            }
+            
+            scannerModal.style.display = 'flex';
+            await startCamera();
+        }
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => track.stop());
+                }
+                
+                const constraints = {
+                    video: {
+                        facingMode: { exact: currentCamera },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                scannerVideo.srcObject = videoStream;
+                await scannerVideo.play();
+                scanningActive = true;
+                startScanning();
+            } catch (err) {
+                console.error('Camera error:', err);
+                try {
+                    const constraints = { video: true };
+                    videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    scannerVideo.srcObject = videoStream;
+                    await scannerVideo.play();
+                    scanningActive = true;
+                    startScanning();
+                } catch (e) {
+                    showMessage('Unable to access camera', 'error');
+                }
+            }
+        }
+        
+        // Switch camera
+        async function switchCamera() {
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            torchEnabled = false;
+            await startCamera();
+        }
+        
+        // Toggle torch
+        async function toggleTorch() {
+            if (videoStream && videoStream.getVideoTracks().length > 0) {
+                const track = videoStream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities();
+                
+                if (capabilities.torch) {
+                    torchEnabled = !torchEnabled;
+                    await track.applyConstraints({
+                        advanced: [{ torch: torchEnabled }]
+                    });
+                }
+            }
+        }
+        
+        // Start scanning frames
+        function startScanning() {
+            if (!scanningActive) return;
+            
+            if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.width = scannerVideo.videoWidth;
+                canvas.height = scannerVideo.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(scannerVideo, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, canvas.width, canvas.height, {
+                    inversionAttempts: "dontInvert",
+                });
+                
+                if (code) {
+                    scanningActive = false;
+                    closeScanner();
+                    processQRData(code.data);
+                    return;
+                }
+            }
+            
+            requestAnimationFrame(startScanning);
+        }
+        
+        // Close scanner modal
+        function closeScanner() {
+            scanningActive = false;
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            scannerModal.style.display = 'none';
+        }
+        
+        // Process QR data
+        async function processQRData(qrData) {
+            showMessage('Processing QR code...', 'info');
+            
+            try {
+                let pusData;
+                
+                try {
+                    pusData = JSON.parse(qrData);
+                } catch (e) {
+                    pusData = { pusId: qrData };
+                }
+                
+                // If only ID, fetch from server
+                if (!pusData.pusName && pusData.pusId && APPS_SCRIPT_URL) {
+                    const response = await fetch(`${APPS_SCRIPT_URL}?qr=${encodeURIComponent(pusData.pusId)}&email=${authenticatedEmployee}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        pusData = result.pus;
+                    }
+                }
+                
+                currentPUSData = pusData;
+                displayPUSInfo(pusData);
+                
+                pusInfoSection.style.display = 'block';
+                attendanceForm.style.display = 'block';
+                
+                showMessage('✓ Person Under Supervision loaded. Please record attendance.', 'success');
+                
+                // Scroll to info
+                pusInfoSection.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('QR processing error:', error);
+                showMessage('Error: Invalid QR code or person not found', 'error');
+            }
+        }
+        
+        // Display PUS info
+        function displayPUSInfo(pus) {
+            document.getElementById('displayPUSId').textContent = pus.pusId || 'N/A';
+            document.getElementById('displayPUSName').textContent = pus.pusName || 'N/A';
+            document.getElementById('displayGenderAge').textContent = `${pus.gender || 'N/A'} / ${pus.age || 'N/A'} years`;
+            document.getElementById('displayOffense').textContent = pus.offenseCategory || 'N/A';
+            document.getElementById('displayPeriod').textContent = `${pus.startDate || 'N/A'} to ${pus.endDate || 'N/A'}`;
+            document.getElementById('displayOfficer').textContent = pus.supervisingOfficer || 'N/A';
+            document.getElementById('displayCluster').textContent = pus.cluster || 'N/A';
+        }
+        
+        // Submit attendance
+        async function submitAttendance(event) {
+            event.preventDefault();
+            
+            if (!APPS_SCRIPT_URL) {
+                showMessage('Please configure URL in Admin Settings', 'error');
+                return;
+            }
+            
+            if (!authenticatedEmployee) {
+                showMessage('Please authenticate first.', 'error');
+                return;
+            }
+            
+            if (!currentPUSData) {
+                showMessage('No PUS data. Please scan QR code first.', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            const attendanceData = {
+                employeeEmail: authenticatedEmployee,
+                pusId: currentPUSData.pusId,
+                pusName: currentPUSData.pusName,
+                gender: currentPUSData.gender,
+                age: currentPUSData.age,
+                offenseCategory: currentPUSData.offenseCategory,
+                startDate: currentPUSData.startDate,
+                endDate: currentPUSData.endDate,
+                supervisingOfficer: currentPUSData.supervisingOfficer,
+                cluster: currentPUSData.cluster,
+                remarks: document.getElementById('remarks').value,
+                familySupport: document.getElementById('familySupport').value,
+                notes: document.getElementById('notes').value
+            };
+            
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attendanceData)
+                });
+                
+                showMessage('✓ Attendance recorded successfully!', 'success');
+                
+                // Reset for next scan
+                setTimeout(() => {
+                    pusInfoSection.style.display = 'none';
+                    attendanceForm.style.display = 'none';
+                    attendanceForm.reset();
+                    currentPUSData = null;
+                }, 2000);
+                
+            } catch (error) {
+                showMessage('Error recording attendance', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Record Attendance';
+            }
+        }
+        
+        function showMessage(message, type) {
+            messageArea.innerHTML = `<div class="message message-${type}">${message}</div>`;
+            setTimeout(() => {
+                if (messageArea.innerHTML.includes(message)) {
+                    messageArea.innerHTML = '';
+                }
+            }, 4000);
+        }
+        
+        // Event listeners
+        scannerTrigger.addEventListener('click', openScanner);
+        attendanceForm.addEventListener('submit', submitAttendance);
+        
+        // Make functions global
+        window.switchCamera = switchCamera;
+        window.toggleTorch = toggleTorch;
+        window.closeScanner = closeScanner;
+        
+        // Initialize
+        loadSavedAuth();
+    </script>
+</body>
+</html>
