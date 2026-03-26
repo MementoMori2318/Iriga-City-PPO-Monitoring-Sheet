@@ -5,37 +5,395 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Iriga PPO - Attendance System</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f0f4f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 20px; border-radius: 15px 15px 0 0; text-align: center; }
-        .form-card { background: white; padding: 30px; border-radius: 0 0 15px 15px; }
-        .login-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; border-radius: 15px; text-align: center; color: white; margin-bottom: 20px; }
-        .user-info { background: #e3f2fd; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-        .user-email { font-weight: bold; color: #2a5298; }
-        .logout-btn { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
-        .g_id_signin { display: flex; justify-content: center; margin: 20px 0; }
-        .scanner-area { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 40px; text-align: center; cursor: pointer; color: white; margin-bottom: 20px; }
-        .scanner-icon { font-size: 64px; }
-        .pus-info-card { background: #e3f2fd; border-radius: 12px; padding: 16px; margin: 15px 0; }
-        .info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #bbdef5; }
-        .info-label { font-weight: 700; width: 130px; }
-        .info-value { flex: 1; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; }
-        select, textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; }
-        button { background: #2a5298; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; }
-        .message { padding: 12px; border-radius: 10px; margin-top: 15px; text-align: center; }
-        .message-success { background: #d4edda; color: #155724; }
-        .message-error { background: #f8d7da; color: #721c24; }
-        .message-info { background: #d1ecf1; color: #0c5460; }
-        .config-section { background: #fff3cd; padding: 12px; border-radius: 10px; margin-bottom: 15px; display: none; }
-        .admin-link { text-align: center; margin-top: 20px; font-size: 12px; }
-        .authorized-only { display: none; }
-        .scanner-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; }
-        #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
-        .close-scanner { position: absolute; top: 20px; right: 20px; background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 25px; z-index: 1001; cursor: pointer; width: auto; }
-        @media (max-width: 640px) { .info-label { width: 100px; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #f0f4f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 25px 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Login Section */
+        .login-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            margin-bottom: 25px;
+        }
+        
+        .login-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .login-section p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        
+        /* Google Button Container */
+        .g_id_signin {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        /* User Info */
+        .user-info {
+            background: #e3f2fd;
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .user-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .user-text {
+            line-height: 1.3;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 1rem;
+        }
+        
+        .user-email {
+            font-size: 0.8rem;
+            color: #5a6e7c;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+            transform: scale(1.02);
+        }
+        
+        /* Scanner Button */
+        .scanner-area {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            color: white;
+            margin-bottom: 25px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .scanner-area:hover {
+            transform: scale(1.01);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .scanner-icon {
+            font-size: 55px;
+            margin-bottom: 12px;
+        }
+        
+        .scanner-area h3 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        
+        .scanner-area p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        /* PUS Info Card */
+        .pus-info-card {
+            background: #e3f2fd;
+            border-radius: 16px;
+            padding: 18px;
+            margin: 20px 0;
+        }
+        
+        .pus-info-card h3 {
+            color: #1e3c72;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            border-left: 3px solid #2a5298;
+            padding-left: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #cfe3f5;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 700;
+            width: 120px;
+            color: #1e3c72;
+            font-size: 0.85rem;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #2c3e50;
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            background: white;
+        }
+        
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .submit-btn {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover:not(:disabled) {
+            background: #1e3c72;
+            transform: translateY(-1px);
+        }
+        
+        .submit-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        /* Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .message-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        /* Config Section */
+        .config-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .config-section label {
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        
+        .admin-link {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        
+        .admin-link a {
+            color: #6c757d;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        
+        .admin-link a:hover {
+            color: #2a5298;
+            text-decoration: underline;
+        }
+        
+        .authorized-only {
+            display: none;
+        }
+        
+        /* Scanner Modal */
+        .scanner-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+        }
+        
+        #scannerVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .close-scanner {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 30px;
+            z-index: 1001;
+            cursor: pointer;
+            font-weight: 600;
+            width: auto;
+        }
+        
+        @media (max-width: 550px) {
+            body {
+                padding: 12px;
+            }
+            .form-card {
+                padding: 20px;
+            }
+            .info-label {
+                width: 100px;
+            }
+            .user-details {
+                width: 100%;
+                justify-content: center;
+            }
+            .user-info {
+                justify-content: center;
+                text-align: center;
+            }
+            .scanner-area {
+                padding: 25px 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -46,43 +404,78 @@
         </div>
         
         <div class="form-card">
+            <!-- Config Section (hidden by default, shows when needed) -->
             <div class="config-section" id="configSection">
                 <label>🔧 Google Apps Script URL:</label>
-                <input type="text" id="scriptUrlInput" style="width:100%; padding:8px; margin:8px 0;" placeholder="https://script.google.com/macros/s/.../exec">
-                <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px;">Save URL</button>
+                <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec">
+                <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px; margin-top:5px;">Save URL</button>
             </div>
             
+            <!-- Login Section -->
             <div id="loginSection" class="login-section">
                 <h2>🔐 Officer Login</h2>
-                <p style="margin: 10px 0;">Sign in with your Google account</p>
-                <div id="g_id_signin"></div>
+                <p>Sign in with your official Google account</p>
+                <div id="g_id_signin" class="g_id_signin"></div>
+                <p style="font-size: 0.75rem; margin-top: 15px; opacity: 0.7;">Only authorized PPO officers can access this system</p>
             </div>
             
+            <!-- User Info -->
             <div id="userInfo" class="user-info">
-                <div><strong>👤 Logged in as:</strong><br><span class="user-email" id="userEmailDisplay"></span></div>
+                <div class="user-details">
+                    <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+                    <div class="user-text">
+                        <div class="user-name" id="userNameDisplay"></div>
+                        <div class="user-email" id="userEmailDisplay"></div>
+                    </div>
+                </div>
                 <button id="logoutBtn" class="logout-btn">Sign Out</button>
             </div>
             
+            <!-- Main Content -->
             <div id="mainContent" class="authorized-only">
+                <!-- Scanner Button -->
                 <div class="scanner-area" id="scannerTrigger">
                     <div class="scanner-icon">📷</div>
                     <h3>Scan PUS QR Code</h3>
-                    <p>Tap to open camera and scan QR code</p>
+                    <p>Tap to open camera and scan QR code of Person Under Supervision</p>
                 </div>
                 
+                <!-- PUS Information Section -->
                 <div id="pusInfoSection" style="display: none;">
-                    <h3>📋 Person Under Supervision</h3>
                     <div class="pus-info-card">
-                        <div class="info-row"><div class="info-label">PUS ID:</div><div class="info-value" id="displayPUSId">-</div></div>
-                        <div class="info-row"><div class="info-label">Full Name:</div><div class="info-value" id="displayPUSName">-</div></div>
-                        <div class="info-row"><div class="info-label">Gender / Age:</div><div class="info-value" id="displayGenderAge">-</div></div>
-                        <div class="info-row"><div class="info-label">Offense Category:</div><div class="info-value" id="displayOffense">-</div></div>
-                        <div class="info-row"><div class="info-label">Supervision Period:</div><div class="info-value" id="displayPeriod">-</div></div>
-                        <div class="info-row"><div class="info-label">Supervising Officer:</div><div class="info-value" id="displayOfficer">-</div></div>
-                        <div class="info-row"><div class="info-label">Cluster:</div><div class="info-value" id="displayCluster">-</div></div>
+                        <h3>📋 Person Under Supervision</h3>
+                        <div class="info-row">
+                            <div class="info-label">PUS ID:</div>
+                            <div class="info-value" id="displayPUSId">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Full Name:</div>
+                            <div class="info-value" id="displayPUSName">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Gender / Age:</div>
+                            <div class="info-value" id="displayGenderAge">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Offense Category:</div>
+                            <div class="info-value" id="displayOffense">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Supervision Period:</div>
+                            <div class="info-value" id="displayPeriod">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Supervising Officer:</div>
+                            <div class="info-value" id="displayOfficer">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Cluster:</div>
+                            <div class="info-value" id="displayCluster">-</div>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- Attendance Form -->
                 <form id="attendanceForm" style="display: none;">
                     <div class="form-group">
                         <label>REMARKS (Attendance Type) *</label>
@@ -93,6 +486,7 @@
                             <option value="Make-up Attendance">Make-up Attendance</option>
                             <option value="Home Visit">Home Visit</option>
                             <option value="Community Service">Community Service</option>
+                            <option value="Others">Others</option>
                         </select>
                     </div>
                     
@@ -100,17 +494,17 @@
                         <label>WITH FAMILY SUPPORT GROUP *</label>
                         <select id="familySupport" required>
                             <option value="Yes">Yes - Family member/s present</option>
-                            <option value="No">No - No family support</option>
-                            <option value="Partial">Partial - Limited involvement</option>
+                            <option value="No">No - No family support available</option>
+                            <option value="Partial">Partial - Limited family involvement</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label>NOTES (Observations / Interventions)</label>
-                        <textarea id="notes" rows="3" placeholder="Enter any observations or recommendations..."></textarea>
+                        <textarea id="notes" rows="3" placeholder="Enter any observations, concerns, interventions, or recommendations..."></textarea>
                     </div>
                     
-                    <button type="submit" id="submitBtn">✅ Record Attendance</button>
+                    <button type="submit" id="submitBtn" class="submit-btn">✅ Record Attendance</button>
                 </form>
             </div>
             
@@ -123,6 +517,7 @@
         </div>
     </div>
     
+    <!-- Scanner Modal -->
     <div id="scannerModal" class="scanner-modal">
         <button class="close-scanner" onclick="closeScanner()">✕ Close</button>
         <video id="scannerVideo" autoplay playsinline></video>
@@ -132,16 +527,17 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         // ============================================
-        // WORKING GOOGLE CLIENT ID - TESTED AND WORKING
+        // CONFIGURATION
         // ============================================
         const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
+        const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec';
         
         const AUTHORIZED_EMAILS = [
-            'iace2318i@gmail.com',
-            'wq.rodalyn@gmail.com'
+            'iace2318i@gmail.com'
         ];
         
-        let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || '';
+        // Load saved URL or use default
+        let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || APPS_SCRIPT_URL_DEFAULT;
         let currentUser = null;
         let currentPUSData = null;
         let videoStream = null;
@@ -152,6 +548,8 @@
         const userInfo = document.getElementById('userInfo');
         const mainContent = document.getElementById('mainContent');
         const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userAvatar = document.getElementById('userAvatar');
         const logoutBtn = document.getElementById('logoutBtn');
         const scannerTrigger = document.getElementById('scannerTrigger');
         const scannerModal = document.getElementById('scannerModal');
@@ -167,8 +565,6 @@
         
         // Initialize Google Sign-In
         function initGoogleSignIn() {
-            console.log('Initializing with Client ID:', GOOGLE_CLIENT_ID);
-            
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: handleCredentialResponse,
@@ -177,7 +573,14 @@
             
             google.accounts.id.renderButton(
                 document.getElementById('g_id_signin'),
-                { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', width: 300 }
+                { 
+                    type: 'standard', 
+                    theme: 'outline', 
+                    size: 'large', 
+                    text: 'signin_with',
+                    shape: 'rectangular',
+                    width: 280
+                }
             );
         }
         
@@ -194,19 +597,22 @@
                         picture: payload.picture
                     };
                     
+                    userNameDisplay.textContent = currentUser.name || currentUser.email;
                     userEmailDisplay.textContent = currentUser.email;
+                    if (currentUser.picture) userAvatar.src = currentUser.picture;
+                    
                     userInfo.style.display = 'flex';
                     loginSection.style.display = 'none';
                     mainContent.style.display = 'block';
                     
                     localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
-                    showMessage(`Welcome ${currentUser.name || currentUser.email}!`, 'success');
+                    showMessage(`Welcome, ${currentUser.name || currentUser.email}!`, 'success');
                 } else {
-                    showMessage('Unauthorized: Email not registered in PPO system', 'error');
+                    showMessage('Unauthorized: Your email is not registered in the PPO system.', 'error');
                     google.accounts.id.disableAutoSelect();
                 }
             } catch (e) {
-                showMessage('Login failed', 'error');
+                showMessage('Login failed. Please try again.', 'error');
             }
         }
         
@@ -217,7 +623,9 @@
                 const user = JSON.parse(saved);
                 if (AUTHORIZED_EMAILS.includes(user.email)) {
                     currentUser = user;
-                    userEmailDisplay.textContent = currentUser.email;
+                    userNameDisplay.textContent = user.name || user.email;
+                    userEmailDisplay.textContent = user.email;
+                    if (user.picture) userAvatar.src = user.picture;
                     userInfo.style.display = 'flex';
                     loginSection.style.display = 'none';
                     mainContent.style.display = 'block';
@@ -236,7 +644,8 @@
             userInfo.style.display = 'none';
             pusInfoSection.style.display = 'none';
             attendanceForm.style.display = 'none';
-            showMessage('Logged out', 'info');
+            currentPUSData = null;
+            showMessage('You have been signed out.', 'info');
         }
         
         logoutBtn.addEventListener('click', logout);
@@ -249,7 +658,7 @@
                 return;
             }
             
-            scannerModal.style.display = 'block';
+            scannerModal.style.display = 'flex';
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 scannerVideo.srcObject = stream;
@@ -258,7 +667,7 @@
                 scanning = true;
                 scanQR();
             } catch (err) {
-                showMessage('Camera access denied', 'error');
+                showMessage('Camera access denied. Please allow camera permissions.', 'error');
                 closeScanner();
             }
         }
@@ -284,12 +693,15 @@
         
         function closeScanner() {
             scanning = false;
-            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            if (videoStream) {
+                videoStream.getTracks().forEach(t => t.stop());
+                videoStream = null;
+            }
             scannerModal.style.display = 'none';
         }
         
         async function processQR(qrData) {
-            showMessage('Processing...', 'info');
+            showMessage('Processing QR code...', 'info');
             try {
                 const data = JSON.parse(qrData);
                 currentPUSData = data;
@@ -304,17 +716,27 @@
                 
                 pusInfoSection.style.display = 'block';
                 attendanceForm.style.display = 'block';
-                showMessage('✓ PUS loaded. Record attendance.', 'success');
+                showMessage('✓ Person Under Supervision loaded. Record attendance.', 'success');
             } catch (e) {
-                showMessage('Invalid QR code', 'error');
+                showMessage('Invalid QR code. Please scan a valid PUS QR code.', 'error');
             }
         }
         
         async function submitAttendance(e) {
             e.preventDefault();
-            if (!APPS_SCRIPT_URL) { showMessage('Configure URL in Settings', 'error'); return; }
-            if (!currentUser) { showMessage('Sign in first', 'error'); return; }
-            if (!currentPUSData) { showMessage('Scan QR code first', 'error'); return; }
+            if (!APPS_SCRIPT_URL) {
+                showMessage('Please configure Google Apps Script URL in Settings', 'error');
+                configSection.style.display = 'block';
+                return;
+            }
+            if (!currentUser) {
+                showMessage('Please sign in first.', 'error');
+                return;
+            }
+            if (!currentPUSData) {
+                showMessage('Please scan a QR code first.', 'error');
+                return;
+            }
             
             submitBtn.disabled = true;
             submitBtn.textContent = 'Submitting...';
@@ -342,7 +764,7 @@
                     body: JSON.stringify(attendanceData),
                     headers: { 'Content-Type': 'application/json' }
                 });
-                showMessage('✓ Attendance recorded!', 'success');
+                showMessage('✓ Attendance recorded successfully!', 'success');
                 
                 setTimeout(() => {
                     pusInfoSection.style.display = 'none';
@@ -351,7 +773,7 @@
                     currentPUSData = null;
                 }, 2000);
             } catch (err) {
-                showMessage('Error recording', 'error');
+                showMessage('Error recording attendance. Please check connection.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '✅ Record Attendance';
@@ -360,7 +782,9 @@
         
         function showMessage(msg, type) {
             messageArea.innerHTML = `<div class="message message-${type}">${msg}</div>`;
-            setTimeout(() => { if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = ''; }, 4000);
+            setTimeout(() => {
+                if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = '';
+            }, 4000);
         }
         
         // Admin settings
@@ -375,8 +799,10 @@
             if (url) {
                 APPS_SCRIPT_URL = url;
                 localStorage.setItem('appsScriptUrl', url);
-                showMessage('URL saved', 'success');
+                showMessage('✓ URL saved successfully!', 'success');
                 configSection.style.display = 'none';
+            } else {
+                showMessage('Please enter a valid URL', 'error');
             }
         };
         
@@ -392,6 +818,9 @@
         } else {
             window.addEventListener('load', () => setTimeout(initGoogleSignIn, 500));
         }
+        
+        // Pre-populate URL input with default
+        scriptUrlInput.value = APPS_SCRIPT_URL;
     </script>
 </body>
 </html>
