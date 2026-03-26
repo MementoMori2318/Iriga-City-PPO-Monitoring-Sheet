@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Iriga PPO - Attendance Monitoring System</title>
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -50,51 +48,100 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
-        .employee-section {
+        /* Google Login Section */
+        .login-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            color: white;
+        }
+        
+        .user-info {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
             border-left: 4px solid #2a5298;
+            display: none;
         }
         
-        .employee-email {
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        
+        .user-details {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .user-email {
             font-weight: bold;
             color: #2a5298;
-            word-break: break-all;
-            margin: 8px 0;
+            font-size: 16px;
+        }
+        
+        .user-name {
+            color: #6c757d;
             font-size: 14px;
         }
         
-        .signin-status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .signout-btn {
-            background: #dc3545;
-            padding: 6px 12px;
-            font-size: 12px;
+        .gsi-material-button {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            background-color: #fff;
+            background-image: none;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            box-sizing: border-box;
+            cursor: pointer;
+            font-family: 'Google Sans', 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            height: 40px;
+            letter-spacing: 0.25px;
+            outline: none;
+            overflow: hidden;
+            padding: 0 12px;
+            position: relative;
+            text-align: center;
+            vertical-align: middle;
+            white-space: nowrap;
             width: auto;
-            border-radius: 20px;
-        }
-        
-        .signout-btn:hover {
-            background: #c82333;
-        }
-        
-        /* Google Sign-In Button Styling */
-        .g_id_signin {
-            display: flex;
+            background: white;
+            color: #1f1f1f;
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
-            margin-top: 10px;
+            gap: 8px;
+            transition: all 0.2s;
         }
         
-        /* Scanner Button */
+        .gsi-material-button:hover {
+            background-color: #f8f9fa;
+            border-color: #d2e3fc;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        /* Scanner Section */
         .scanner-area {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -110,12 +157,6 @@
         .scanner-area:hover {
             transform: scale(1.02);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .scanner-area.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
         }
         
         .scanner-icon {
@@ -226,6 +267,9 @@
             font-size: 16px;
             flex: 1;
             max-width: 150px;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
         
         .torch-btn {
@@ -345,12 +389,6 @@
             border: 1px solid #bee5eb;
         }
         
-        .message-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffc107;
-        }
-        
         .config-section {
             background: #fff3cd;
             border: 1px solid #ffc107;
@@ -379,12 +417,8 @@
             text-decoration: none;
         }
         
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            vertical-align: middle;
-            margin-right: 8px;
+        .authorized-only {
+            display: none;
         }
         
         @media (max-width: 640px) {
@@ -413,109 +447,120 @@
                 <button id="saveUrlBtn" style="background: #28a745; margin-top: 8px;">Save URL</button>
             </div>
             
-            <!-- Employee Section with Google Sign-In -->
-            <div class="employee-section">
-                <strong>👤 Officer Authentication</strong>
-                <div id="authContainer">
-                    <div id="g_id_onload"
-                         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-                         data-callback="handleGoogleSignIn"
-                         data-auto_prompt="false">
-                    </div>
-                    <div class="g_id_signin"
-                         data-type="standard"
-                         data-size="large"
-                         data-theme="outline"
-                         data-text="sign_in_with"
-                         data-shape="rectangular"
-                         data-logo_alignment="left">
-                    </div>
-                    <div id="userInfo" style="display: none;">
-                        <div class="signin-status">
-                            <div>
-                                <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
-                                <span id="userEmailDisplay" class="employee-email"></span>
-                            </div>
-                            <button id="signoutBtn" class="signout-btn">Sign Out</button>
+            <!-- Google Login Section -->
+            <div id="loginSection" class="login-section">
+                <h2>🔐 Officer Login</h2>
+                <p style="margin: 10px 0;">Sign in with your official Google account</p>
+                <div id="g_id_onload"
+                     data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-login_uri=""
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+                <p style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+                    Only authorized PPO officers can access this system
+                </p>
+            </div>
+            
+            <!-- User Info (Shown after login) -->
+            <div id="userInfo" class="user-info">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                    <div>
+                        <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+                        <div class="user-details">
+                            <div class="user-email" id="userEmailDisplay"></div>
+                            <div class="user-name" id="userNameDisplay"></div>
                         </div>
-                        <div id="authStatus" style="font-size: 12px; color: #28a745; margin-top: 8px;">✓ Authenticated</div>
                     </div>
+                    <button id="logoutBtn" class="logout-btn">Sign Out</button>
                 </div>
             </div>
             
-            <!-- Scanner Button -->
-            <div class="scanner-area" id="scannerTrigger">
-                <div class="scanner-icon">📷</div>
-                <h3>Scan PUS QR Code</h3>
-                <p>Tap to open camera and scan QR code of Person Under Supervision</p>
+            <!-- Main Content (Hidden until authorized) -->
+            <div id="mainContent" class="authorized-only">
+                <!-- Scanner Button -->
+                <div class="scanner-area" id="scannerTrigger">
+                    <div class="scanner-icon">📷</div>
+                    <h3>Scan PUS QR Code</h3>
+                    <p>Tap to open camera and scan QR code of Person Under Supervision</p>
+                </div>
+                
+                <!-- PUS Information Section -->
+                <div id="pusInfoSection" style="display: none;">
+                    <h3>📋 Person Under Supervision Information</h3>
+                    <div class="pus-info-card">
+                        <div class="info-row">
+                            <div class="info-label">PUS ID:</div>
+                            <div class="info-value" id="displayPUSId">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Full Name:</div>
+                            <div class="info-value" id="displayPUSName">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Gender / Age:</div>
+                            <div class="info-value" id="displayGenderAge">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Offense Category:</div>
+                            <div class="info-value" id="displayOffense">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Supervision Period:</div>
+                            <div class="info-value" id="displayPeriod">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Supervising Officer:</div>
+                            <div class="info-value" id="displayOfficer">-</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Cluster:</div>
+                            <div class="info-value" id="displayCluster">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attendance Form -->
+                <form id="attendanceForm" style="display: none;">
+                    <div class="form-group">
+                        <label>REMARKS (Attendance Type) *</label>
+                        <select id="remarks" required>
+                            <option value="Individual Reporting">Individual Reporting</option>
+                            <option value="TC Attendance">TC Attendance</option>
+                            <option value="Request for Permit to Travel">Request for Permit to Travel</option>
+                            <option value="Make-up Attendance">Make-up Attendance</option>
+                            <option value="Home Visit">Home Visit</option>
+                            <option value="Community Service">Community Service</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>WITH FAMILY SUPPORT GROUP *</label>
+                        <select id="familySupport" required>
+                            <option value="Yes">Yes - Family member/s present or supportive</option>
+                            <option value="No">No - No family support available</option>
+                            <option value="Partial">Partial - Limited family involvement</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>NOTES (Observations / Interventions / Recommendations)</label>
+                        <textarea id="notes" placeholder="Enter any observations, concerns, interventions, or important notes about this session..."></textarea>
+                    </div>
+                    
+                    <button type="submit" id="submitBtn">✅ Record Attendance</button>
+                </form>
             </div>
-            
-            <!-- PUS Information Section -->
-            <div id="pusInfoSection" style="display: none;">
-                <h3>📋 Person Under Supervision Information</h3>
-                <div class="pus-info-card">
-                    <div class="info-row">
-                        <div class="info-label">PUS ID:</div>
-                        <div class="info-value" id="displayPUSId">-</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Full Name:</div>
-                        <div class="info-value" id="displayPUSName">-</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Gender / Age:</div>
-                        <div class="info-value" id="displayGenderAge">-</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Offense Category:</div>
-                        <div class="info-value" id="displayOffense">-</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Supervision Period:</div>
-                        <div class="info-value" id="displayPeriod">-</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Supervising Officer:</div>
-                        <div class="info-value" id="displayOfficer">-</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Cluster:</div>
-                        <div class="info-value" id="displayCluster">-</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Attendance Form -->
-            <form id="attendanceForm" style="display: none;">
-                <div class="form-group">
-                    <label>REMARKS (Attendance Type) *</label>
-                    <select id="remarks" required>
-                        <option value="Individual Reporting">Individual Reporting</option>
-                        <option value="TC Attendance">TC Attendance</option>
-                        <option value="Request for Permit to Travel">Request for Permit to Travel</option>
-                        <option value="Make-up Attendance">Make-up Attendance</option>
-                        <option value="Home Visit">Home Visit</option>
-                        <option value="Community Service">Community Service</option>
-                        <option value="Others">Others</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>WITH FAMILY SUPPORT GROUP *</label>
-                    <select id="familySupport" required>
-                        <option value="Yes">Yes - Family member/s present or supportive</option>
-                        <option value="No">No - No family support available</option>
-                        <option value="Partial">Partial - Limited family involvement</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>NOTES (Observations / Interventions / Recommendations)</label>
-                    <textarea id="notes" placeholder="Enter any observations, concerns, interventions, or important notes about this session..."></textarea>
-                </div>
-                
-                <button type="submit" id="submitBtn">✅ Record Attendance</button>
-            </form>
             
             <div id="messageArea"></div>
             
@@ -526,7 +571,7 @@
         </div>
     </div>
     
-    <!-- FULL SCREEN SCANNER MODAL -->
+    <!-- Full Screen Scanner Modal -->
     <div id="scannerModal" class="scanner-modal">
         <div class="scanner-header">
             <h3>📷 Scan PUS QR Code</h3>
@@ -543,13 +588,19 @@
         </div>
     </div>
     
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         // CONFIGURATION
         let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || '';
-        let authenticatedEmployee = null;
+        let currentUser = null;
         let currentPUSData = null;
-        let googleUser = null;
+        
+        // Authorized emails (only these can access)
+        const AUTHORIZED_EMAILS = [
+            'iace2318i@gmail.com',
+            // Add more authorized officer emails here
+        ];
         
         // Camera variables
         let videoStream = null;
@@ -558,11 +609,13 @@
         let scanningActive = false;
         
         // DOM Elements
-        const authContainer = document.getElementById('authContainer');
+        const loginSection = document.getElementById('loginSection');
         const userInfo = document.getElementById('userInfo');
+        const mainContent = document.getElementById('mainContent');
         const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const userNameDisplay = document.getElementById('userNameDisplay');
         const userAvatar = document.getElementById('userAvatar');
-        const signoutBtn = document.getElementById('signoutBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
         const scannerTrigger = document.getElementById('scannerTrigger');
         const scannerModal = document.getElementById('scannerModal');
         const scannerVideo = document.getElementById('scannerVideo');
@@ -575,85 +628,112 @@
         const saveUrlBtn = document.getElementById('saveUrlBtn');
         const adminLink = document.getElementById('adminLink');
         
-        // Google Sign-In Handler
-        window.handleGoogleSignIn = function(response) {
-            console.log('Google Sign-In response:', response);
+        // Initialize Google Sign-In
+        function initializeGoogleSignIn() {
+            // Initialize Google Identity Services
+            google.accounts.id.initialize({
+                client_id: 'YOUR_GOOGLE_CLIENT_ID', // You'll need to create this
+                callback: handleCredentialResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
             
-            // Decode the JWT token to get user info
-            const payload = parseJwt(response.credential);
-            console.log('User payload:', payload);
-            
-            if (payload && payload.email) {
-                googleUser = {
-                    email: payload.email,
-                    name: payload.name,
-                    picture: payload.picture,
-                    sub: payload.sub
-                };
-                
-                authenticatedEmployee = googleUser.email;
-                localStorage.setItem('employeeEmail', authenticatedEmployee);
-                
-                // Update UI
-                userEmailDisplay.textContent = authenticatedEmployee;
-                userAvatar.src = googleUser.picture || 'https://via.placeholder.com/32';
-                
-                // Hide Google Sign-In button, show user info
-                document.querySelector('.g_id_signin').style.display = 'none';
-                userInfo.style.display = 'block';
-                
-                showMessage(`✓ Signed in as ${googleUser.name} (${authenticatedEmployee})`, 'success');
-                
-                // Enable scanner
-                scannerTrigger.classList.remove('disabled');
-            }
-        };
+            // Render the button
+            google.accounts.id.renderButton(
+                document.querySelector('.g_id_signin'),
+                {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'signin_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'left',
+                    width: 300
+                }
+            );
+        }
         
-        // Parse JWT token
-        function parseJwt(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (e) {
-                console.error('Error parsing JWT:', e);
-                return null;
+        // Handle Google Sign-In response
+        function handleCredentialResponse(response) {
+            // Decode the JWT token
+            const responsePayload = decodeJwtResponse(response.credential);
+            
+            const user = {
+                email: responsePayload.email,
+                name: responsePayload.name,
+                picture: responsePayload.picture,
+                sub: responsePayload.sub
+            };
+            
+            // Check if email is authorized
+            if (AUTHORIZED_EMAILS.includes(user.email)) {
+                currentUser = user;
+                showUserInfo(user);
+                showMessage(`Welcome, ${user.name}! You are now logged in.`, 'success');
+                
+                // Save to localStorage for session persistence
+                localStorage.setItem('loggedInUser', JSON.stringify(user));
+                
+                // Show main content
+                mainContent.style.display = 'block';
+                loginSection.style.display = 'none';
+            } else {
+                showMessage('UNAUTHORIZED: Your email is not registered in the PPO system. Please contact administrator.', 'error');
+                // Sign out unauthorized user
+                google.accounts.id.disableAutoSelect();
             }
         }
         
-        // Sign out
-        function signOut() {
-            authenticatedEmployee = null;
-            googleUser = null;
-            localStorage.removeItem('employeeEmail');
-            
-            // Show Google Sign-In button
-            document.querySelector('.g_id_signin').style.display = 'flex';
+        // Decode JWT token
+        function decodeJwtResponse(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+        
+        // Show user info
+        function showUserInfo(user) {
+            userEmailDisplay.textContent = user.email;
+            userNameDisplay.textContent = user.name;
+            userAvatar.src = user.picture;
+            userInfo.style.display = 'block';
+        }
+        
+        // Check for existing session
+        function checkExistingSession() {
+            const savedUser = localStorage.getItem('loggedInUser');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                if (AUTHORIZED_EMAILS.includes(user.email)) {
+                    currentUser = user;
+                    showUserInfo(user);
+                    mainContent.style.display = 'block';
+                    loginSection.style.display = 'none';
+                    showMessage(`Welcome back, ${user.name}!`, 'success');
+                } else {
+                    localStorage.removeItem('loggedInUser');
+                }
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            google.accounts.id.disableAutoSelect();
+            localStorage.removeItem('loggedInUser');
+            currentUser = null;
+            mainContent.style.display = 'none';
+            loginSection.style.display = 'block';
             userInfo.style.display = 'none';
-            
-            // Clear any scanned data
             pusInfoSection.style.display = 'none';
             attendanceForm.style.display = 'none';
             currentPUSData = null;
-            
-            showMessage('Signed out successfully', 'info');
+            showMessage('You have been signed out.', 'info');
         }
         
-        signoutBtn.addEventListener('click', signOut);
-        
-        // Check for saved authentication
-        function loadSavedAuth() {
-            const savedEmail = localStorage.getItem('employeeEmail');
-            if (savedEmail && googleUser) {
-                authenticatedEmployee = savedEmail;
-                userEmailDisplay.textContent = savedEmail;
-                userInfo.style.display = 'block';
-                document.querySelector('.g_id_signin').style.display = 'none';
-            }
-        }
+        logoutBtn.addEventListener('click', logout);
         
         // Admin settings
         adminLink.addEventListener('click', function(e) {
@@ -676,14 +756,14 @@
         
         // OPEN FULL SCREEN SCANNER
         async function openScanner() {
-            if (!authenticatedEmployee) {
-                showMessage('⚠️ Please sign in with your Google account first.', 'warning');
-                return;
-            }
-            
             if (!APPS_SCRIPT_URL) {
                 showMessage('⚠️ Please configure Google Apps Script URL in Admin Settings first.', 'info');
                 configSection.style.display = 'block';
+                return;
+            }
+            
+            if (!currentUser) {
+                showMessage('Please sign in first.', 'error');
                 return;
             }
             
@@ -799,7 +879,7 @@
                 
                 // If only ID, fetch from server
                 if (!pusData.pusName && pusData.pusId && APPS_SCRIPT_URL) {
-                    const response = await fetch(`${APPS_SCRIPT_URL}?qr=${encodeURIComponent(pusData.pusId)}&email=${authenticatedEmployee}`);
+                    const response = await fetch(`${APPS_SCRIPT_URL}?qr=${encodeURIComponent(pusData.pusId)}&email=${currentUser.email}`);
                     const result = await response.json();
                     
                     if (result.success) {
@@ -844,7 +924,7 @@
                 return;
             }
             
-            if (!authenticatedEmployee) {
+            if (!currentUser) {
                 showMessage('Please sign in first.', 'error');
                 return;
             }
@@ -858,7 +938,7 @@
             submitBtn.textContent = 'Submitting...';
             
             const attendanceData = {
-                employeeEmail: authenticatedEmployee,
+                employeeEmail: currentUser.email,
                 clientName: currentPUSData.pusName || currentPUSData.clientName,
                 clientId: currentPUSData.pusId || currentPUSData.clientId,
                 gender: currentPUSData.gender,
@@ -916,13 +996,12 @@
         window.switchCamera = switchCamera;
         window.toggleTorch = toggleTorch;
         window.closeScanner = closeScanner;
-        window.handleGoogleSignIn = handleGoogleSignIn;
         
         // Initialize
-        loadSavedAuth();
+        checkExistingSession();
         
-        // Disable scanner until authenticated
-        scannerTrigger.classList.add('disabled');
+        // Note: You need to create a Google Cloud Project and get Client ID
+        // Instructions in the next message
     </script>
 </body>
 </html>
