@@ -727,8 +727,8 @@
             
             const attendanceData = {
                 employeeEmail: authenticatedEmployee,
-                pusId: currentPUSData.pusId,
-                pusName: currentPUSData.pusName,
+                clientName: currentPUSData.pusName,  // Send as clientName
+                clientId: currentPUSData.pusId,       // Send as clientId
                 gender: currentPUSData.gender,
                 age: currentPUSData.age,
                 offenseCategory: currentPUSData.offenseCategory,
