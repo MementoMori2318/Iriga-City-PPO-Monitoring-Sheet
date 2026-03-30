@@ -478,7 +478,7 @@
                 <!-- Attendance Form -->
                 <form id="attendanceForm" style="display: none;">
                     <div class="form-group">
-                        <label>REMARKS (Attendance Type) *</label>
+                        <label for="remarks">REMARKS (Attendance Type) *</label>
                         <select id="remarks" required>
                             <option value="Individual Reporting">Individual Reporting</option>
                             <option value="TC Attendance">TC Attendance</option>
@@ -489,21 +489,21 @@
                             <option value="Others">Others</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>WITH FAMILY SUPPORT GROUP *</label>
+                        <label for="familySupport">WITH FAMILY SUPPORT GROUP *</label>
                         <select id="familySupport" required>
                             <option value="Yes">Yes - Family member/s present</option>
                             <option value="No">No - No family support available</option>
                             <option value="Partial">Partial - Limited family involvement</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>NOTES (Observations / Interventions)</label>
+                        <label for="notes">NOTES (Observations / Interventions)</label>
                         <textarea id="notes" rows="3" placeholder="Enter any observations, concerns, interventions, or recommendations..."></textarea>
                     </div>
-                    
+
                     <button type="submit" id="submitBtn" class="submit-btn">✅ Record Attendance</button>
                 </form>
             </div>
