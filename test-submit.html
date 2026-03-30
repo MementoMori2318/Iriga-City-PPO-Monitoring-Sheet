@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Google Sheets Connection</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f0f0f0; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Google Sheets Connection</h1>
+    
+    <button onclick="testDirectFetch()">Test Direct Fetch</button>
+    <button onclick="testFormSubmit()">Test Form Submit</button>
+    <button onclick="testGetRequest()">Test GET Request</button>
+    
+    <h3>Result:</h3>
+    <pre id="result">Click a button to test...</pre>
+    
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5sSV2IE8IFTt9T-Qxt6ZqdVS0HbYwxLadUjGQoj4aYMoBKwIjL568nNic4zwNB-wCCA/exec';
+        
+        async function testDirectFetch() {
+            document.getElementById('result').innerText = 'Sending test data...';
+            
+            const testData = {
+                employeeEmail: 'iace2318i@gmail.com',
+                clientName: 'TEST - From Direct Fetch',
+                gender: 'Male',
+                age: '35',
+                offenseCategory: 'Drug Offense',
+                remarks: 'Test from browser',
+                familySupport: 'Yes',
+                notes: 'This is a test from direct fetch',
+                startDate: '',
+                endDate: '',
+                supervisingOfficer: '',
+                cluster: ''
+            };
+            
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                document.getElementById('result').innerHTML = '✅ Success!\n\n' + JSON.stringify(result, null, 2);
+            } catch (err) {
+                document.getElementById('result').innerHTML = '❌ Error: ' + err.message;
+            }
+        }
+        
+        function testFormSubmit() {
+            // Create a hidden iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.name = 'hidden_frame_' + Date.now();
+            document.body.appendChild(iframe);
+            
+            // Create form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = APPS_SCRIPT_URL;
+            form.target = iframe.name;
+            
+            const testData = {
+                employeeEmail: 'iace2318i@gmail.com',
+                clientName: 'TEST - From Form Submit',
+                gender: 'Male',
+                age: '35',
+                offenseCategory: 'Drug Offense',
+                remarks: 'Test from form',
+                familySupport: 'Yes',
+                notes: 'This is a test from form submission'
+            };
+            
+            // Add data as JSON in hidden field
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = 'data';
+            hiddenField.value = JSON.stringify(testData);
+            form.appendChild(hiddenField);
+            
+            document.body.appendChild(form);
+            form.submit();
+            
+            document.getElementById('result').innerHTML = '✅ Form submitted! Check your Google Sheet and Apps Script logs.';
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(form);
+                document.body.removeChild(iframe);
+            }, 3000);
+        }
+        
+        async function testGetRequest() {
+            document.getElementById('result').innerText = 'Testing GET request...';
+            
+            try {
+                const response = await fetch(APPS_SCRIPT_URL + '?email=iace2318i@gmail.com&qr=test123');
+                const result = await response.json();
+                document.getElementById('result').innerHTML = 'GET Response:\n\n' + JSON.stringify(result, null, 2);
+            } catch (err) {
+                document.getElementById('result').innerHTML = '❌ Error: ' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
