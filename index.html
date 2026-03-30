@@ -48,7 +48,6 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
-        /* Login Section */
         .login-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 40px 20px;
@@ -63,19 +62,6 @@
             margin-bottom: 10px;
         }
         
-        .login-section p {
-            margin-bottom: 20px;
-            opacity: 0.9;
-        }
-        
-        /* Google Button Container */
-        .g_id_signin {
-            display: flex;
-            justify-content: center;
-            margin: 15px 0;
-        }
-        
-        /* User Info */
         .user-info {
             background: #e3f2fd;
             padding: 15px 20px;
@@ -102,10 +88,6 @@
             object-fit: cover;
         }
         
-        .user-text {
-            line-height: 1.3;
-        }
-        
         .user-name {
             font-weight: 600;
             color: #1e3c72;
@@ -124,17 +106,8 @@
             padding: 8px 20px;
             border-radius: 25px;
             cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s;
         }
         
-        .logout-btn:hover {
-            background: #c82333;
-            transform: scale(1.02);
-        }
-        
-        /* Scanner Button */
         .scanner-area {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 20px;
@@ -143,12 +116,11 @@
             cursor: pointer;
             color: white;
             margin-bottom: 25px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
         
         .scanner-area:hover {
             transform: scale(1.01);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
         
         .scanner-icon {
@@ -161,12 +133,6 @@
             margin-bottom: 5px;
         }
         
-        .scanner-area p {
-            font-size: 0.85rem;
-            opacity: 0.9;
-        }
-        
-        /* PUS Info Card */
         .pus-info-card {
             background: #e3f2fd;
             border-radius: 16px;
@@ -206,7 +172,6 @@
             word-break: break-word;
         }
         
-        /* Form */
         .form-group {
             margin-bottom: 20px;
         }
@@ -226,7 +191,6 @@
             border-radius: 12px;
             font-size: 0.9rem;
             font-family: inherit;
-            transition: border-color 0.2s;
             background: white;
         }
         
@@ -250,13 +214,7 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            transition: all 0.2s;
             margin-top: 10px;
-        }
-        
-        .submit-btn:hover:not(:disabled) {
-            background: #1e3c72;
-            transform: translateY(-1px);
         }
         
         .submit-btn:disabled {
@@ -264,7 +222,6 @@
             cursor: not-allowed;
         }
         
-        /* Messages */
         .message {
             padding: 12px 16px;
             border-radius: 12px;
@@ -291,19 +248,12 @@
             border-left: 4px solid #17a2b8;
         }
         
-        /* Config Section */
         .config-section {
             background: #fff3cd;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: none;
-            border-left: 4px solid #ffc107;
-        }
-        
-        .config-section label {
-            font-size: 0.8rem;
-            margin-bottom: 5px;
         }
         
         .config-section input {
@@ -330,16 +280,10 @@
             margin: 0 8px;
         }
         
-        .admin-link a:hover {
-            color: #2a5298;
-            text-decoration: underline;
-        }
-        
         .authorized-only {
             display: none;
         }
         
-        /* Scanner Modal */
         .scanner-modal {
             display: none;
             position: fixed;
@@ -368,31 +312,20 @@
             border-radius: 30px;
             z-index: 1001;
             cursor: pointer;
-            font-weight: 600;
             width: auto;
         }
         
+        .test-btn {
+            background: #17a2b8;
+            margin-bottom: 15px;
+            width: auto;
+            padding: 10px 20px;
+        }
+        
         @media (max-width: 550px) {
-            body {
-                padding: 12px;
-            }
-            .form-card {
-                padding: 20px;
-            }
-            .info-label {
-                width: 100px;
-            }
-            .user-details {
-                width: 100%;
-                justify-content: center;
-            }
-            .user-info {
-                justify-content: center;
-                text-align: center;
-            }
-            .scanner-area {
-                padding: 25px 15px;
-            }
+            body { padding: 12px; }
+            .form-card { padding: 20px; }
+            .info-label { width: 100px; }
         }
     </style>
 </head>
@@ -404,11 +337,12 @@
         </div>
         
         <div class="form-card">
-            <!-- Config Section (hidden by default, shows when needed) -->
+            <!-- Config Section -->
             <div class="config-section" id="configSection">
                 <label>🔧 Google Apps Script URL:</label>
                 <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec">
-                <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px; margin-top:5px;">Save URL</button>
+                <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px;">Save URL</button>
+                <button id="testUrlBtn" style="background:#17a2b8; width:auto; padding:8px 20px; margin-left:10px;">Test Connection</button>
             </div>
             
             <!-- Login Section -->
@@ -416,14 +350,14 @@
                 <h2>🔐 Officer Login</h2>
                 <p>Sign in with your official Google account</p>
                 <div id="g_id_signin" class="g_id_signin"></div>
-                <p style="font-size: 0.75rem; margin-top: 15px; opacity: 0.7;">Only authorized PPO officers can access this system</p>
+                <p style="font-size: 0.75rem; margin-top: 15px;">Only authorized PPO officers can access this system</p>
             </div>
             
             <!-- User Info -->
             <div id="userInfo" class="user-info">
                 <div class="user-details">
-                    <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
-                    <div class="user-text">
+                    <img id="userAvatar" class="user-avatar" src="">
+                    <div>
                         <div class="user-name" id="userNameDisplay"></div>
                         <div class="user-email" id="userEmailDisplay"></div>
                     </div>
@@ -433,49 +367,25 @@
             
             <!-- Main Content -->
             <div id="mainContent" class="authorized-only">
-                <!-- Scanner Button -->
                 <div class="scanner-area" id="scannerTrigger">
                     <div class="scanner-icon">📷</div>
                     <h3>Scan PUS QR Code</h3>
-                    <p>Tap to open camera and scan QR code of Person Under Supervision</p>
+                    <p>Tap to open camera and scan QR code</p>
                 </div>
                 
-                <!-- PUS Information Section -->
                 <div id="pusInfoSection" style="display: none;">
                     <div class="pus-info-card">
                         <h3>📋 Person Under Supervision</h3>
-                        <div class="info-row">
-                            <div class="info-label">PUS ID:</div>
-                            <div class="info-value" id="displayPUSId">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Full Name:</div>
-                            <div class="info-value" id="displayPUSName">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Gender / Age:</div>
-                            <div class="info-value" id="displayGenderAge">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Offense Category:</div>
-                            <div class="info-value" id="displayOffense">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Supervision Period:</div>
-                            <div class="info-value" id="displayPeriod">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Supervising Officer:</div>
-                            <div class="info-value" id="displayOfficer">-</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Cluster:</div>
-                            <div class="info-value" id="displayCluster">-</div>
-                        </div>
+                        <div class="info-row"><div class="info-label">PUS ID:</div><div class="info-value" id="displayPUSId">-</div></div>
+                        <div class="info-row"><div class="info-label">Full Name:</div><div class="info-value" id="displayPUSName">-</div></div>
+                        <div class="info-row"><div class="info-label">Gender / Age:</div><div class="info-value" id="displayGenderAge">-</div></div>
+                        <div class="info-row"><div class="info-label">Offense Category:</div><div class="info-value" id="displayOffense">-</div></div>
+                        <div class="info-row"><div class="info-label">Supervision Period:</div><div class="info-value" id="displayPeriod">-</div></div>
+                        <div class="info-row"><div class="info-label">Supervising Officer:</div><div class="info-value" id="displayOfficer">-</div></div>
+                        <div class="info-row"><div class="info-label">Cluster:</div><div class="info-value" id="displayCluster">-</div></div>
                     </div>
                 </div>
                 
-                <!-- Attendance Form -->
                 <form id="attendanceForm" style="display: none;">
                     <div class="form-group">
                         <label>REMARKS (Attendance Type) *</label>
@@ -486,7 +396,6 @@
                             <option value="Make-up Attendance">Make-up Attendance</option>
                             <option value="Home Visit">Home Visit</option>
                             <option value="Community Service">Community Service</option>
-                            <option value="Others">Others</option>
                         </select>
                     </div>
                     
@@ -494,14 +403,14 @@
                         <label>WITH FAMILY SUPPORT GROUP *</label>
                         <select id="familySupport" required>
                             <option value="Yes">Yes - Family member/s present</option>
-                            <option value="No">No - No family support available</option>
-                            <option value="Partial">Partial - Limited family involvement</option>
+                            <option value="No">No - No family support</option>
+                            <option value="Partial">Partial - Limited involvement</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label>NOTES (Observations / Interventions)</label>
-                        <textarea id="notes" rows="3" placeholder="Enter any observations, concerns, interventions, or recommendations..."></textarea>
+                        <label>NOTES</label>
+                        <textarea id="notes" rows="3" placeholder="Observations, interventions, recommendations..."></textarea>
                     </div>
                     
                     <button type="submit" id="submitBtn" class="submit-btn">✅ Record Attendance</button>
@@ -537,7 +446,6 @@
             'wq.rodalyn@gmail.com'
         ];
         
-        // Load saved URL or use default
         let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || APPS_SCRIPT_URL_DEFAULT;
         let currentUser = null;
         let currentPUSData = null;
@@ -564,25 +472,66 @@
         const saveUrlBtn = document.getElementById('saveUrlBtn');
         const adminLink = document.getElementById('adminLink');
         
+        // Test connection function
+        async function testConnection() {
+            if (!APPS_SCRIPT_URL) {
+                showMessage('No URL configured', 'error');
+                return;
+            }
+            
+            showMessage('Testing connection...', 'info');
+            
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                
+                const result = await response.json();
+                console.log('Test result:', result);
+                
+                if (result && result.success === true) {
+                    showMessage('✅ Connection successful! Server is reachable.', 'success');
+                } else {
+                    showMessage('⚠️ Server responded but with error: ' + (result.error || 'Unknown'), 'info');
+                }
+            } catch (err) {
+                console.error('Connection error:', err);
+                showMessage('❌ Connection failed: ' + err.message, 'error');
+            }
+        }
+        
         // Initialize Google Sign-In
         function initGoogleSignIn() {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleCredentialResponse,
-                auto_select: false
-            });
+            if (typeof google === 'undefined' || !google.accounts) {
+                console.log('Google library not loaded yet, retrying...');
+                setTimeout(initGoogleSignIn, 500);
+                return;
+            }
             
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { 
-                    type: 'standard', 
-                    theme: 'outline', 
-                    size: 'large', 
-                    text: 'signin_with',
-                    shape: 'rectangular',
-                    width: 280
+            try {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleCredentialResponse,
+                    auto_select: false
+                });
+                
+                const buttonElement = document.getElementById('g_id_signin');
+                if (buttonElement) {
+                    google.accounts.id.renderButton(buttonElement, { 
+                        type: 'standard', 
+                        theme: 'outline', 
+                        size: 'large', 
+                        text: 'signin_with',
+                        shape: 'rectangular',
+                        width: 280
+                    });
+                    console.log('Google Sign-In button rendered');
                 }
-            );
+            } catch (e) {
+                console.error('Google Sign-In error:', e);
+            }
         }
         
         // Handle login response
@@ -609,7 +558,7 @@
                     localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
                     showMessage(`Welcome, ${currentUser.name || currentUser.email}!`, 'success');
                 } else {
-                    showMessage('Unauthorized: Your email is not registered in the PPO system.', 'error');
+                    showMessage('Unauthorized: Your email is not registered.', 'error');
                     google.accounts.id.disableAutoSelect();
                 }
             } catch (e) {
@@ -637,7 +586,9 @@
         }
         
         function logout() {
-            google.accounts.id.disableAutoSelect();
+            if (google && google.accounts) {
+                google.accounts.id.disableAutoSelect();
+            }
             localStorage.removeItem('loggedInUser');
             currentUser = null;
             mainContent.style.display = 'none';
@@ -717,91 +668,83 @@
                 
                 pusInfoSection.style.display = 'block';
                 attendanceForm.style.display = 'block';
-                showMessage('✓ Person Under Supervision loaded. Record attendance.', 'success');
+                showMessage('✓ Person loaded. Record attendance.', 'success');
             } catch (e) {
                 showMessage('Invalid QR code. Please scan a valid PUS QR code.', 'error');
             }
         }
         
         async function submitAttendance(e) {
-    e.preventDefault();
-    
-    if (!APPS_SCRIPT_URL) {
-        showMessage('Please configure Google Apps Script URL in Settings', 'error');
-        configSection.style.display = 'block';
-        return;
-    }
-    if (!currentUser) {
-        showMessage('Please sign in first.', 'error');
-        return;
-    }
-    if (!currentPUSData) {
-        showMessage('Please scan a QR code first.', 'error');
-        return;
-    }
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
-    
-    const attendanceData = {
-        employeeEmail: currentUser.email,
-        clientName: currentPUSData.pusName || currentPUSData.clientName,
-        clientId: currentPUSData.pusId || currentPUSData.clientId,
-        gender: currentPUSData.gender,
-        age: currentPUSData.age,
-        offenseCategory: currentPUSData.offenseCategory,
-        startDate: currentPUSData.startDate,
-        endDate: currentPUSData.endDate,
-        supervisingOfficer: currentPUSData.supervisingOfficer,
-        cluster: currentPUSData.cluster,
-        remarks: document.getElementById('remarks').value,
-        familySupport: document.getElementById('familySupport').value,
-        notes: document.getElementById('notes').value
-    };
-    
-    console.log('Sending data:', attendanceData);
-    
-    try {
-        // Remove 'mode: "no-cors"' to allow reading response
-        const response = await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(attendanceData)
-        });
-        
-        // Try to parse the response
-        const result = await response.json();
-        
-        if (result.success) {
-            showMessage('✓ Attendance recorded successfully!', 'success');
+            e.preventDefault();
             
-            // Reset for next scan
-            setTimeout(() => {
-                pusInfoSection.style.display = 'none';
-                attendanceForm.style.display = 'none';
-                attendanceForm.reset();
-                currentPUSData = null;
-            }, 2000);
-        } else {
-            showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
+            if (!APPS_SCRIPT_URL) {
+                showMessage('Please configure Google Apps Script URL in Settings', 'error');
+                configSection.style.display = 'block';
+                return;
+            }
+            if (!currentUser) {
+                showMessage('Please sign in first.', 'error');
+                return;
+            }
+            if (!currentPUSData) {
+                showMessage('Please scan a QR code first.', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            const attendanceData = {
+                employeeEmail: currentUser.email,
+                clientName: currentPUSData.pusName || currentPUSData.clientName,
+                clientId: currentPUSData.pusId || currentPUSData.clientId,
+                gender: currentPUSData.gender,
+                age: currentPUSData.age,
+                offenseCategory: currentPUSData.offenseCategory,
+                startDate: currentPUSData.startDate,
+                endDate: currentPUSData.endDate,
+                supervisingOfficer: currentPUSData.supervisingOfficer,
+                cluster: currentPUSData.cluster,
+                remarks: document.getElementById('remarks').value,
+                familySupport: document.getElementById('familySupport').value,
+                notes: document.getElementById('notes').value
+            };
+            
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attendanceData)
+                });
+                
+                const result = await response.json();
+                console.log('Server response:', result);
+                
+                if (result.success) {
+                    showMessage('✓ Attendance recorded successfully!', 'success');
+                    setTimeout(() => {
+                        pusInfoSection.style.display = 'none';
+                        attendanceForm.style.display = 'none';
+                        attendanceForm.reset();
+                        currentPUSData = null;
+                    }, 2000);
+                } else {
+                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                showMessage('Error connecting to server. Please check your URL and connection.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Record Attendance';
+            }
         }
-        
-    } catch (err) {
-        console.error('Fetch error:', err);
-        showMessage('Error connecting to server. Please check your URL and connection.', 'error');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '✅ Record Attendance';
-    }
-}
         
         function showMessage(msg, type) {
             messageArea.innerHTML = `<div class="message message-${type}">${msg}</div>`;
             setTimeout(() => {
                 if (messageArea.innerHTML.includes(msg)) messageArea.innerHTML = '';
-            }, 4000);
+            }, 5000);
         }
         
         // Admin settings
@@ -823,6 +766,12 @@
             }
         };
         
+        // Add test button listener
+        const testUrlBtn = document.getElementById('testUrlBtn');
+        if (testUrlBtn) {
+            testUrlBtn.onclick = testConnection;
+        }
+        
         scannerTrigger.onclick = openScanner;
         attendanceForm.onsubmit = submitAttendance;
         window.closeScanner = closeScanner;
@@ -830,13 +779,16 @@
         // Initialize
         checkSession();
         
+        // Wait for Google library to load
         if (typeof google !== 'undefined' && google.accounts) {
             initGoogleSignIn();
         } else {
-            window.addEventListener('load', () => setTimeout(initGoogleSignIn, 500));
+            window.addEventListener('load', function() {
+                setTimeout(initGoogleSignIn, 1000);
+            });
         }
         
-        // Pre-populate URL input with default
+        // Pre-populate URL input
         scriptUrlInput.value = APPS_SCRIPT_URL;
     </script>
 </body>
