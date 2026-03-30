@@ -316,6 +316,10 @@
             margin: 8px 0;
         }
         
+        .config-section button {
+            margin-right: 8px;
+        }
+        
         .admin-link {
             text-align: center;
             margin-top: 25px;
@@ -404,11 +408,12 @@
         </div>
         
         <div class="form-card">
-            <!-- Config Section (hidden by default, shows when needed) -->
+            <!-- Config Section -->
             <div class="config-section" id="configSection">
                 <label>🔧 Google Apps Script URL:</label>
-                <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec">
-                <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px; margin-top:5px;">Save URL</button>
+                <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbziPv9mABXrFbIM1VuU9vSLlp4O9fLBxauYmzKzc8x_2yc24qUZQ8da_AsEPmjpMY1f/exec">
+                <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px;">Save URL</button>
+                <button id="resetUrlBtn" style="background:#dc3545; width:auto; padding:8px 20px;">Reset to Default</button>
             </div>
             
             <!-- Login Section -->
@@ -561,6 +566,7 @@
         const configSection = document.getElementById('configSection');
         const scriptUrlInput = document.getElementById('scriptUrlInput');
         const saveUrlBtn = document.getElementById('saveUrlBtn');
+        const resetUrlBtn = document.getElementById('resetUrlBtn');
         const adminLink = document.getElementById('adminLink');
         
         // Initialize Google Sign-In
@@ -804,6 +810,14 @@
             } else {
                 showMessage('Please enter a valid URL', 'error');
             }
+        };
+        
+        // Reset URL to default
+        resetUrlBtn.onclick = () => {
+            localStorage.removeItem('appsScriptUrl');
+            APPS_SCRIPT_URL = APPS_SCRIPT_URL_DEFAULT;
+            scriptUrlInput.value = APPS_SCRIPT_URL_DEFAULT;
+            showMessage('✓ URL reset to default. Click "Save URL" to confirm.', 'success');
         };
         
         scannerTrigger.onclick = openScanner;
