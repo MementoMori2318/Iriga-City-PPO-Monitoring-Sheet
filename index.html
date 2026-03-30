@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Iriga PPO - Attendance System</title>
     <style>
+        /* ... (keep all existing styles) ... */
         * {
             margin: 0;
             padding: 0;
@@ -542,8 +543,16 @@
             'wq.rodalyn@gmail.com'
         ];
         
-        // Load saved URL or use default
-        let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || APPS_SCRIPT_URL_DEFAULT;
+        // Load saved URL or use default – with auto‑reset if saved differs from default
+        let savedUrl = localStorage.getItem('appsScriptUrl');
+        if (savedUrl && savedUrl !== APPS_SCRIPT_URL_DEFAULT) {
+            // Old saved URL is different from current default – discard it
+            localStorage.removeItem('appsScriptUrl');
+            console.log('Auto‑reset: old saved URL removed');
+            savedUrl = null;
+        }
+        let APPS_SCRIPT_URL = savedUrl || APPS_SCRIPT_URL_DEFAULT;
+        
         let currentUser = null;
         let currentPUSData = null;
         let videoStream = null;
