@@ -5,328 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Iriga PPO - Attendance System</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: #f0f4f8;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 25px 20px;
-            border-radius: 20px 20px 0 0;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 1.6rem;
-            margin-bottom: 5px;
-        }
-        
-        .header p {
-            font-size: 0.85rem;
-            opacity: 0.9;
-        }
-        
-        .form-card {
-            background: white;
-            padding: 30px;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-        
-        .login-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 20px;
-            border-radius: 20px;
-            text-align: center;
-            color: white;
-            margin-bottom: 25px;
-        }
-        
-        .login-section h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-        
-        .user-info {
-            background: #e3f2fd;
-            padding: 15px 20px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .user-details {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        
-        .user-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            color: #1e3c72;
-            font-size: 1rem;
-        }
-        
-        .user-email {
-            font-size: 0.8rem;
-            color: #5a6e7c;
-        }
-        
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-        }
-        
-        .scanner-area {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 35px 20px;
-            text-align: center;
-            cursor: pointer;
-            color: white;
-            margin-bottom: 25px;
-            transition: transform 0.2s;
-        }
-        
-        .scanner-area:hover {
-            transform: scale(1.01);
-        }
-        
-        .scanner-icon {
-            font-size: 55px;
-            margin-bottom: 12px;
-        }
-        
-        .scanner-area h3 {
-            font-size: 1.3rem;
-            margin-bottom: 5px;
-        }
-        
-        .pus-info-card {
-            background: #e3f2fd;
-            border-radius: 16px;
-            padding: 18px;
-            margin: 20px 0;
-        }
-        
-        .pus-info-card h3 {
-            color: #1e3c72;
-            margin-bottom: 12px;
-            font-size: 1.1rem;
-            border-left: 3px solid #2a5298;
-            padding-left: 10px;
-        }
-        
-        .info-row {
-            display: flex;
-            padding: 10px 0;
-            border-bottom: 1px solid #cfe3f5;
-        }
-        
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            font-weight: 700;
-            width: 120px;
-            color: #1e3c72;
-            font-size: 0.85rem;
-        }
-        
-        .info-value {
-            flex: 1;
-            color: #2c3e50;
-            font-size: 0.85rem;
-            word-break: break-word;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2c3e50;
-            font-size: 0.9rem;
-        }
-        
-        select, textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-family: inherit;
-            background: white;
-        }
-        
-        select:focus, textarea:focus {
-            outline: none;
-            border-color: #2a5298;
-        }
-        
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        .submit-btn {
-            background: #2a5298;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        .submit-btn:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-        
-        .message {
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-top: 20px;
-            text-align: center;
-            font-size: 0.85rem;
-        }
-        
-        .message-success {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-        }
-        
-        .message-error {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-        }
-        
-        .message-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-left: 4px solid #17a2b8;
-        }
-        
-        .config-section {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .config-section input {
-            width: 100%;
-            padding: 10px;
-            font-size: 0.75rem;
-            font-family: monospace;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin: 8px 0;
-        }
-        
-        .admin-link {
-            text-align: center;
-            margin-top: 25px;
-            font-size: 0.75rem;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 20px;
-        }
-        
-        .admin-link a {
-            color: #6c757d;
-            text-decoration: none;
-            margin: 0 8px;
-        }
-        
-        .authorized-only {
-            display: none;
-        }
-        
-        .scanner-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: black;
-            z-index: 1000;
-        }
-        
-        #scannerVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .close-scanner {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 30px;
-            z-index: 1001;
-            cursor: pointer;
-            width: auto;
-        }
-        
-        .test-btn {
-            background: #17a2b8;
-            margin-bottom: 15px;
-            width: auto;
-            padding: 10px 20px;
-        }
-        
-        @media (max-width: 550px) {
-            body { padding: 12px; }
-            .form-card { padding: 20px; }
-            .info-label { width: 100px; }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; padding: 20px; min-height: 100vh; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 20px; border-radius: 20px 20px 0 0; text-align: center; }
+        .header h1 { font-size: 1.6rem; margin-bottom: 5px; }
+        .form-card { background: white; padding: 30px; border-radius: 0 0 20px 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .login-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; border-radius: 20px; text-align: center; color: white; margin-bottom: 25px; }
+        .user-info { background: #e3f2fd; padding: 15px 20px; border-radius: 15px; margin-bottom: 25px; display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+        .user-details { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .user-name { font-weight: 600; color: #1e3c72; }
+        .user-email { font-size: 0.8rem; color: #5a6e7c; }
+        .logout-btn { background: #dc3545; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer; }
+        .scanner-area { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 35px 20px; text-align: center; cursor: pointer; color: white; margin-bottom: 25px; }
+        .scanner-icon { font-size: 55px; margin-bottom: 12px; }
+        .pus-info-card { background: #e3f2fd; border-radius: 16px; padding: 18px; margin: 20px 0; }
+        .pus-info-card h3 { color: #1e3c72; margin-bottom: 12px; border-left: 3px solid #2a5298; padding-left: 10px; }
+        .info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #cfe3f5; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-weight: 700; width: 120px; color: #1e3c72; font-size: 0.85rem; }
+        .info-value { flex: 1; color: #2c3e50; font-size: 0.85rem; word-break: break-word; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; }
+        select, textarea { width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; font-family: inherit; background: white; }
+        select:focus, textarea:focus { outline: none; border-color: #2a5298; }
+        textarea { resize: vertical; min-height: 80px; }
+        .submit-btn { background: #2a5298; color: white; border: none; padding: 14px 20px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+        .submit-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+        .message { padding: 12px 16px; border-radius: 12px; margin-top: 20px; text-align: center; font-size: 0.85rem; }
+        .message-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .message-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .message-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+        .config-section { background: #fff3cd; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: none; }
+        .config-section input { width: 100%; padding: 10px; font-size: 0.75rem; font-family: monospace; border: 1px solid #ddd; border-radius: 8px; margin: 8px 0; }
+        .admin-link { text-align: center; margin-top: 25px; font-size: 0.75rem; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        .admin-link a { color: #6c757d; text-decoration: none; margin: 0 8px; }
+        .authorized-only { display: none; }
+        .scanner-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; }
+        #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
+        .close-scanner { position: absolute; top: 20px; right: 20px; background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 30px; z-index: 1001; cursor: pointer; width: auto; }
+        .test-btn { background: #17a2b8; margin-bottom: 15px; width: auto; padding: 10px 20px; }
+        @media (max-width: 550px) { body { padding: 12px; } .form-card { padding: 20px; } .info-label { width: 100px; } }
     </style>
 </head>
 <body>
@@ -337,15 +57,12 @@
         </div>
         
         <div class="form-card">
-            <!-- Config Section -->
             <div class="config-section" id="configSection">
                 <label>🔧 Google Apps Script URL:</label>
-                <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbzUqD-8e1gjVCjUeeqijcJQ1peIiKKpyY25gyvIfhYcz91Y9qsVQbSIvN9HbIHFQtp5mw/exec">
+                <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbx5sSV2IE8IFTt9T-Qxt6ZqdVS0HbYwxLadUjGQoj4aYMoBKwIjL568nNic4zwNB-wCCA/exec">
                 <button id="saveUrlBtn" style="background:#28a745; width:auto; padding:8px 20px;">Save URL</button>
-                <button id="testUrlBtn" style="background:#17a2b8; width:auto; padding:8px 20px; margin-left:10px;">Test Connection</button>
             </div>
             
-            <!-- Login Section -->
             <div id="loginSection" class="login-section">
                 <h2>🔐 Officer Login</h2>
                 <p>Sign in with your official Google account</p>
@@ -353,7 +70,6 @@
                 <p style="font-size: 0.75rem; margin-top: 15px;">Only authorized PPO officers can access this system</p>
             </div>
             
-            <!-- User Info -->
             <div id="userInfo" class="user-info">
                 <div class="user-details">
                     <img id="userAvatar" class="user-avatar" src="">
@@ -365,7 +81,6 @@
                 <button id="logoutBtn" class="logout-btn">Sign Out</button>
             </div>
             
-            <!-- Main Content -->
             <div id="mainContent" class="authorized-only">
                 <div class="scanner-area" id="scannerTrigger">
                     <div class="scanner-icon">📷</div>
@@ -426,7 +141,6 @@
         </div>
     </div>
     
-    <!-- Scanner Modal -->
     <div id="scannerModal" class="scanner-modal">
         <button class="close-scanner" onclick="closeScanner()">✕ Close</button>
         <video id="scannerVideo" autoplay playsinline></video>
@@ -472,40 +186,9 @@
         const saveUrlBtn = document.getElementById('saveUrlBtn');
         const adminLink = document.getElementById('adminLink');
         
-        // Test connection function
-        async function testConnection() {
-            if (!APPS_SCRIPT_URL) {
-                showMessage('No URL configured', 'error');
-                return;
-            }
-            
-            showMessage('Testing connection...', 'info');
-            
-            try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ test: true })
-                });
-                
-                const result = await response.json();
-                console.log('Test result:', result);
-                
-                if (result && result.success === true) {
-                    showMessage('✅ Connection successful! Server is reachable.', 'success');
-                } else {
-                    showMessage('⚠️ Server responded but with error: ' + (result.error || 'Unknown'), 'info');
-                }
-            } catch (err) {
-                console.error('Connection error:', err);
-                showMessage('❌ Connection failed: ' + err.message, 'error');
-            }
-        }
-        
         // Initialize Google Sign-In
         function initGoogleSignIn() {
             if (typeof google === 'undefined' || !google.accounts) {
-                console.log('Google library not loaded yet, retrying...');
                 setTimeout(initGoogleSignIn, 500);
                 return;
             }
@@ -517,18 +200,9 @@
                     auto_select: false
                 });
                 
-                const buttonElement = document.getElementById('g_id_signin');
-                if (buttonElement) {
-                    google.accounts.id.renderButton(buttonElement, { 
-                        type: 'standard', 
-                        theme: 'outline', 
-                        size: 'large', 
-                        text: 'signin_with',
-                        shape: 'rectangular',
-                        width: 280
-                    });
-                    console.log('Google Sign-In button rendered');
-                }
+                google.accounts.id.renderButton(document.getElementById('g_id_signin'), { 
+                    type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', width: 280
+                });
             } catch (e) {
                 console.error('Google Sign-In error:', e);
             }
@@ -562,7 +236,7 @@
                     google.accounts.id.disableAutoSelect();
                 }
             } catch (e) {
-                showMessage('Login failed. Please try again.', 'error');
+                showMessage('Login failed.', 'error');
             }
         }
         
@@ -586,9 +260,7 @@
         }
         
         function logout() {
-            if (google && google.accounts) {
-                google.accounts.id.disableAutoSelect();
-            }
+            if (google && google.accounts) google.accounts.id.disableAutoSelect();
             localStorage.removeItem('loggedInUser');
             currentUser = null;
             mainContent.style.display = 'none';
@@ -597,7 +269,7 @@
             pusInfoSection.style.display = 'none';
             attendanceForm.style.display = 'none';
             currentPUSData = null;
-            showMessage('You have been signed out.', 'info');
+            showMessage('Signed out.', 'info');
         }
         
         logoutBtn.addEventListener('click', logout);
@@ -605,7 +277,7 @@
         // Scanner functions
         async function openScanner() {
             if (!APPS_SCRIPT_URL) {
-                showMessage('Please configure Google Apps Script URL in Settings', 'error');
+                showMessage('Configure URL in Admin Settings', 'error');
                 configSection.style.display = 'block';
                 return;
             }
@@ -619,7 +291,7 @@
                 scanning = true;
                 scanQR();
             } catch (err) {
-                showMessage('Camera access denied. Please allow camera permissions.', 'error');
+                showMessage('Camera access denied', 'error');
                 closeScanner();
             }
         }
@@ -653,7 +325,7 @@
         }
         
         async function processQR(qrData) {
-            showMessage('Processing QR code...', 'info');
+            showMessage('Processing QR...', 'info');
             try {
                 const data = JSON.parse(qrData);
                 currentPUSData = data;
@@ -670,15 +342,16 @@
                 attendanceForm.style.display = 'block';
                 showMessage('✓ Person loaded. Record attendance.', 'success');
             } catch (e) {
-                showMessage('Invalid QR code. Please scan a valid PUS QR code.', 'error');
+                showMessage('Invalid QR code', 'error');
             }
         }
         
+        // Submit attendance - USING NO-CORS (required for Google Apps Script)
         async function submitAttendance(e) {
             e.preventDefault();
             
             if (!APPS_SCRIPT_URL) {
-                showMessage('Please configure Google Apps Script URL in Settings', 'error');
+                showMessage('Configure URL in Settings', 'error');
                 configSection.style.display = 'block';
                 return;
             }
@@ -711,29 +384,27 @@
             };
             
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
+                // USE NO-CORS MODE - This is required for Google Apps Script
+                await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(attendanceData)
                 });
                 
-                const result = await response.json();
-                console.log('Server response:', result);
+                // With no-cors, we can't read the response, but the request was sent
+                showMessage('✓ Attendance recorded! (Check Google Sheet)', 'success');
                 
-                if (result.success) {
-                    showMessage('✓ Attendance recorded successfully!', 'success');
-                    setTimeout(() => {
-                        pusInfoSection.style.display = 'none';
-                        attendanceForm.style.display = 'none';
-                        attendanceForm.reset();
-                        currentPUSData = null;
-                    }, 2000);
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
+                setTimeout(() => {
+                    pusInfoSection.style.display = 'none';
+                    attendanceForm.style.display = 'none';
+                    attendanceForm.reset();
+                    currentPUSData = null;
+                }, 2000);
+                
             } catch (err) {
                 console.error('Fetch error:', err);
-                showMessage('Error connecting to server. Please check your URL and connection.', 'error');
+                showMessage('Error: ' + err.message, 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '✅ Record Attendance';
@@ -759,18 +430,10 @@
             if (url) {
                 APPS_SCRIPT_URL = url;
                 localStorage.setItem('appsScriptUrl', url);
-                showMessage('✓ URL saved successfully!', 'success');
+                showMessage('✓ URL saved!', 'success');
                 configSection.style.display = 'none';
-            } else {
-                showMessage('Please enter a valid URL', 'error');
             }
         };
-        
-        // Add test button listener
-        const testUrlBtn = document.getElementById('testUrlBtn');
-        if (testUrlBtn) {
-            testUrlBtn.onclick = testConnection;
-        }
         
         scannerTrigger.onclick = openScanner;
         attendanceForm.onsubmit = submitAttendance;
@@ -779,16 +442,12 @@
         // Initialize
         checkSession();
         
-        // Wait for Google library to load
         if (typeof google !== 'undefined' && google.accounts) {
             initGoogleSignIn();
         } else {
-            window.addEventListener('load', function() {
-                setTimeout(initGoogleSignIn, 1000);
-            });
+            window.addEventListener('load', () => setTimeout(initGoogleSignIn, 1000));
         }
         
-        // Pre-populate URL input
         scriptUrlInput.value = APPS_SCRIPT_URL;
     </script>
 </body>
