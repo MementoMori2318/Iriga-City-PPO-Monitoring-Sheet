@@ -45,7 +45,6 @@
         .scanner-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; }
         #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
         .close-scanner { position: absolute; top: 20px; right: 20px; background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 30px; z-index: 1001; cursor: pointer; width: auto; }
-        .test-btn { background: #17a2b8; margin-bottom: 15px; width: auto; padding: 10px 20px; }
         @media (max-width: 550px) { body { padding: 12px; } .form-card { padding: 20px; } .info-label { width: 100px; } }
     </style>
 </head>
@@ -153,7 +152,7 @@
         // CONFIGURATION
         // ============================================
         const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
-        const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbxHFkjc7-Kf5i1SVUob8rw05SHoNuY5GBeodR2-pYR3uxYQUieCN2E6jeHO7nc7zYRhyA/exec';
+        const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbx5sSV2IE8IFTt9T-Qxt6ZqdVS0HbYwxLadUjGQoj4aYMoBKwIjL568nNic4zwNB-wCCA/exec';
         
         const AUTHORIZED_EMAILS = [
             'iace2318i@gmail.com',
@@ -346,7 +345,10 @@
             }
         }
         
-        // Submit attendance - USING NO-CORS (required for Google Apps Script)
+        // ============================================
+        // SUBMIT ATTENDANCE - USING FORM SUBMIT WITH IFRAME
+        // This is the most reliable method for Google Apps Script
+        // ============================================
         async function submitAttendance(e) {
             e.preventDefault();
             
@@ -384,16 +386,36 @@
             };
             
             try {
-                // USE NO-CORS MODE - This is required for Google Apps Script
-                await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attendanceData)
-                });
+                // Create a hidden iframe to submit the form (bypasses CORS)
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
                 
-                // With no-cors, we can't read the response, but the request was sent
-                showMessage('✓ Attendance recorded! (Check Google Sheet)', 'success');
+                // Create a form and submit to iframe
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = iframe.name;
+                iframe.name = 'hidden_iframe_' + Date.now();
+                form.target = iframe.name;
+                
+                // Add data as JSON in a hidden field
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'data';
+                hiddenField.value = JSON.stringify(attendanceData);
+                form.appendChild(hiddenField);
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                // Clean up after delay
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    document.body.removeChild(iframe);
+                }, 3000);
+                
+                showMessage('✓ Attendance recorded! Check Google Sheet.', 'success');
                 
                 setTimeout(() => {
                     pusInfoSection.style.display = 'none';
@@ -403,7 +425,7 @@
                 }, 2000);
                 
             } catch (err) {
-                console.error('Fetch error:', err);
+                console.error('Submit error:', err);
                 showMessage('Error: ' + err.message, 'error');
             } finally {
                 submitBtn.disabled = false;
