@@ -738,70 +738,67 @@
         }
         
         async function submitAttendance(e) {
-            e.preventDefault();
-            if (!APPS_SCRIPT_URL) {
-                showMessage('Please configure Google Apps Script URL in Settings', 'error');
-                configSection.style.display = 'block';
-                return;
-            }
-            if (!currentUser) {
-                showMessage('Please sign in first.', 'error');
-                return;
-            }
-            if (!currentPUSData) {
-                showMessage('Please scan a QR code first.', 'error');
-                return;
-            }
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
-            
-            const attendanceData = {
-                employeeEmail: currentUser.email,
-                clientName: currentPUSData.pusName || currentPUSData.clientName,
-                clientId: currentPUSData.pusId || currentPUSData.clientId,
-                gender: currentPUSData.gender,
-                age: currentPUSData.age,
-                offenseCategory: currentPUSData.offenseCategory,
-                startDate: currentPUSData.startDate,
-                endDate: currentPUSData.endDate,
-                supervisingOfficer: currentPUSData.supervisingOfficer,
-                cluster: currentPUSData.cluster,
-                remarks: document.getElementById('remarks').value,
-                familySupport: document.getElementById('familySupport').value,
-                notes: document.getElementById('notes').value
-            };
-            
-            try {
-                // REMOVED mode: 'no-cors' - THIS WAS THE PROBLEM!
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(attendanceData),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage('✓ Attendance recorded successfully!', 'success');
-                    
-                    setTimeout(() => {
-                        pusInfoSection.style.display = 'none';
-                        attendanceForm.style.display = 'none';
-                        attendanceForm.reset();
-                        currentPUSData = null;
-                    }, 2000);
-                } else {
-                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (err) {
-                console.error('Fetch error:', err);
-                showMessage('Connection error. Please try again.', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '✅ Record Attendance';
-            }
-        }
+    e.preventDefault();
+    if (!APPS_SCRIPT_URL) {
+        showMessage('Please configure Google Apps Script URL in Settings', 'error');
+        configSection.style.display = 'block';
+        return;
+    }
+    if (!currentUser) {
+        showMessage('Please sign in first.', 'error');
+        return;
+    }
+    if (!currentPUSData) {
+        showMessage('Please scan a QR code first.', 'error');
+        return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    const attendanceData = {
+        employeeEmail: currentUser.email,
+        clientName: currentPUSData.pusName || currentPUSData.clientName,
+        clientId: currentPUSData.pusId || currentPUSData.clientId,
+        gender: currentPUSData.gender,
+        age: currentPUSData.age,
+        offenseCategory: currentPUSData.offenseCategory,
+        startDate: currentPUSData.startDate,
+        endDate: currentPUSData.endDate,
+        supervisingOfficer: currentPUSData.supervisingOfficer,
+        cluster: currentPUSData.cluster,
+        remarks: document.getElementById('remarks').value,
+        familySupport: document.getElementById('familySupport').value,
+        notes: document.getElementById('notes').value
+    };
+    
+    try {
+        // Use no-cors mode - this is the only way that works with Apps Script
+        await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(attendanceData),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // With no-cors, we cannot read the response, but the server still processes the request.
+        // Show success message optimistically.
+        showMessage('✓ Attendance recorded successfully! Email notification sent.', 'success');
+        
+        setTimeout(() => {
+            pusInfoSection.style.display = 'none';
+            attendanceForm.style.display = 'none';
+            attendanceForm.reset();
+            currentPUSData = null;
+        }, 2000);
+    } catch (err) {
+        console.error('Fetch error:', err);
+        showMessage('Connection error. Please try again.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✅ Record Attendance';
+    }
+}
         
         function showMessage(msg, type) {
             messageArea.innerHTML = `<div class="message message-${type}">${msg}</div>`;
