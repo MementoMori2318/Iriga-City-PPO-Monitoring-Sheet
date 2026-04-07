@@ -773,22 +773,30 @@
             };
             
             try {
-                await fetch(APPS_SCRIPT_URL, {
+                // REMOVED mode: 'no-cors' - THIS WAS THE PROBLEM!
+                const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     body: JSON.stringify(attendanceData),
                     headers: { 'Content-Type': 'application/json' }
                 });
-                showMessage('✓ Attendance recorded successfully!', 'success');
                 
-                setTimeout(() => {
-                    pusInfoSection.style.display = 'none';
-                    attendanceForm.style.display = 'none';
-                    attendanceForm.reset();
-                    currentPUSData = null;
-                }, 2000);
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('✓ Attendance recorded successfully!', 'success');
+                    
+                    setTimeout(() => {
+                        pusInfoSection.style.display = 'none';
+                        attendanceForm.style.display = 'none';
+                        attendanceForm.reset();
+                        currentPUSData = null;
+                    }, 2000);
+                } else {
+                    showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
+                }
             } catch (err) {
-                showMessage('Error recording attendance. Please check connection.', 'error');
+                console.error('Fetch error:', err);
+                showMessage('Connection error. Please try again.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '✅ Record Attendance';
