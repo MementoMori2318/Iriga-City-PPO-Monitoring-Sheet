@@ -3,34 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Iriga PPO - QR Code Generator</title>
+    <title>Iriga PPO - QR Code & ID Card System</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-        }
-        
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
         .card {
             background: white;
             border-radius: 15px;
@@ -38,18 +25,8 @@
             margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2c3e50;
-        }
-        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; }
         input, select {
             width: 100%;
             padding: 12px;
@@ -57,13 +34,7 @@
             border-radius: 8px;
             font-size: 14px;
         }
-        
-        .row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         button {
             background: #2a5298;
             color: white;
@@ -77,28 +48,13 @@
             margin-top: 10px;
             transition: all 0.2s;
         }
-        
-        button:hover {
-            background: #1e3c72;
-            transform: scale(1.02);
-        }
-        
-        .btn-import {
-            background: #28a745;
-        }
-        
-        .btn-import:hover {
-            background: #218838;
-        }
-        
-        .btn-batch {
-            background: #17a2b8;
-        }
-        
-        .btn-batch:hover {
-            background: #138496;
-        }
-        
+        button:hover { background: #1e3c72; transform: scale(1.02); }
+        .btn-import { background: #28a745; }
+        .btn-import:hover { background: #218838; }
+        .btn-batch { background: #17a2b8; }
+        .btn-download { background: #6c757d; }
+        .btn-mass { background: #fd7e14; }
+        .btn-mass:hover { background: #e96a0a; }
         .qr-container {
             text-align: center;
             padding: 30px;
@@ -108,7 +64,6 @@
             border: 2px solid #e0e0e0;
             display: none;
         }
-        
         #qrcode {
             display: flex;
             justify-content: center;
@@ -119,14 +74,18 @@
             min-height: 320px;
             align-items: center;
         }
-        
-        #qrcode canvas, #qrcode img {
-            max-width: 300px;
-            height: auto;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        #qrcode canvas, #qrcode img { max-width: 300px; height: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .id-card-template {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            width: 337px;
+            height: 212px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
-        
-        /* Import Section */
         .import-section {
             background: #e8f5e9;
             border-radius: 12px;
@@ -134,30 +93,10 @@
             margin-bottom: 25px;
             border-left: 4px solid #28a745;
         }
-        
-        .import-section h3 {
-            color: #2e7d32;
-            margin-bottom: 12px;
-        }
-        
-        .file-input {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        
-        .file-input input {
-            flex: 1;
-            padding: 10px;
-        }
-        
-        .batch-list {
-            margin-top: 20px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
+        .import-section h3 { color: #2e7d32; margin-bottom: 12px; }
+        .file-input { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .file-input input { flex: 1; padding: 10px; }
+        .batch-list { margin-top: 20px; max-height: 400px; overflow-y: auto; }
         .batch-item {
             background: #f8f9fa;
             padding: 15px;
@@ -168,156 +107,154 @@
             align-items: center;
             border-left: 4px solid #2a5298;
         }
+        .batch-info { flex: 1; }
+        .batch-name { font-weight: 600; color: #2c3e50; }
+        .batch-details { font-size: 12px; color: #7f8c8d; margin-top: 5px; }
+        .batch-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-small { background: #27ae60; padding: 6px 12px; font-size: 12px; margin-top: 0; }
+        .progress-bar { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin: 10px 0; display: none; }
+        .progress-fill { height: 100%; background: #28a745; width: 0%; transition: width 0.3s; }
+        .info-badge { background: #d1ecf1; color: #0c5460; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; border-left: 4px solid #0c5460; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 15px; }
+        .mass-actions { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 20px; border: 1px solid #dee2e6; }
+        .mass-actions h4 { margin-bottom: 12px; color: #2c3e50; }
+        .template-link { display: inline-block; margin-top: 10px; color: #28a745; text-decoration: none; font-size: 13px; }
+        .status-message { margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 13px; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-info { background: #d1ecf1; color: #0c5460; }
+        .mass-progress { margin-top: 15px; display: none; }
         
-        .batch-item:hover {
-            background: #e9ecef;
+        /* CRITICAL: HIDE ALL UI ELEMENTS WHEN PRINTING */
+        @media print {
+            /* Hide everything except the actual ID cards */
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            /* Hide all buttons, forms, cards with UI, navigation, etc */
+            .no-print,
+            button,
+            .btn-group,
+            .mass-actions,
+            .import-section,
+            .card:first-of-type .btn-group,
+            .card:first-of-type .qr-container .btn-group,
+            .batch-actions,
+            .btn-small,
+            #batchCard .btn-group,
+            .mass-progress,
+            .qr-container .btn-group,
+            .nav-link,
+            .header,
+            .info-badge,
+            .card:first-of-type h2,
+            .card:first-of-type form,
+            .card:first-of-type .qr-container h3,
+            #batchCard h2,
+            .mass-actions h4,
+            .card:last-of-type h2,
+            .card:last-of-type .btn-group,
+            #pusList,
+            #batchList,
+            .container > .card:first-of-type > .import-section,
+            .container > .card:first-of-type > .row,
+            .container > .card:first-of-type > form,
+            button[onclick],
+            .file-input,
+            #excelFile,
+            #importBtn,
+            #downloadTemplateBtn,
+            #templateHelpLink,
+            #importStatus,
+            .progress-bar {
+                display: none !important;
+            }
+            /* Show only the batch card container but hide its UI elements */
+            #batchCard {
+                display: block !important;
+                background: white;
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+            }
+            /* Hide the batch card's inner UI except the print container */
+            #batchCard .mass-actions,
+            #batchCard .batch-list,
+            #batchCard .btn-group,
+            #batchCard h2 {
+                display: none !important;
+            }
+            /* The print container with cards becomes visible */
+            .print-container-only {
+                display: block !important;
+                visibility: visible !important;
+                margin: 0;
+                padding: 0;
+            }
         }
         
-        .batch-info {
-            flex: 1;
-        }
-        
-        .batch-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .batch-details {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-        
-        .batch-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-small {
-            background: #27ae60;
-            padding: 6px 12px;
-            font-size: 12px;
-            margin-top: 0;
-        }
-        
-        .btn-small.danger {
-            background: #dc3545;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
+        /* Print layout: 2 cards per row, up to 6 per page, portrait */
+        .print-layout {
             display: none;
         }
-        
-        .progress-fill {
-            height: 100%;
-            background: #28a745;
-            width: 0%;
-            transition: width 0.3s;
+        .print-layout.active-print {
+            display: block;
         }
-        
-        .info-badge {
-            background: #d1ecf1;
-            color: #0c5460;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            border-left: 4px solid #0c5460;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .print-id-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 337px);
             justify-content: center;
-            margin-top: 15px;
+            gap: 24px 40px;
+            margin: 0 auto;
+            width: fit-content;
         }
-        
-        .template-link {
-            display: inline-block;
-            margin-top: 10px;
-            color: #28a745;
-            text-decoration: none;
-            font-size: 13px;
+        .print-card-item {
+            width: 337px;
+            height: 212px;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
-        
-        .template-link:hover {
-            text-decoration: underline;
+        .print-page {
+            page-break-after: always;
+            break-after: page;
+            margin-bottom: 20px;
         }
-        
-        @media (max-width: 768px) {
-            .row {
-                grid-template-columns: 1fr;
-                gap: 15px;
+        .print-page:last-child {
+            page-break-after: auto;
+            break-after: auto;
+        }
+        @media print {
+            .print-id-grid {
+                gap: 20px 36px;
+                margin: 0 auto;
             }
-            .batch-item {
-                flex-direction: column;
-                text-align: center;
+            .print-page {
+                page-break-after: always;
+                break-after: page;
             }
-            .batch-actions {
-                margin-top: 10px;
+            .print-page:last-child {
+                page-break-after: auto;
             }
-            .card {
-                padding: 20px;
+            @page {
+                size: portrait;
+                margin: 0.5in;
             }
-        }
-        
-        .nav-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .nav-link a {
-            color: white;
-            text-decoration: none;
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            display: inline-block;
-        }
-        
-        .status-message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-        }
-        
-        .status-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .status-info {
-            background: #d1ecf1;
-            color: #0c5460;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <div class="header no-print">
             <h1>🏢 Iriga City PPO</h1>
-            <p>QR Code Generator - Single or Batch Import from Excel/Google Sheets</p>
+            <p>QR Code Generator - ID Cards | Print Layout: Portrait, 2 per row, up to 6 per page</p>
         </div>
         
-        <div class="card">
+        <div class="card no-print">
             <div class="info-badge">
-                ✅ <strong>Import from Excel or Google Sheets!</strong> Download the template, fill in client data, and generate QR codes in bulk.
+                ✅ <strong>Batch Import from Excel!</strong> Generate QR codes & ID cards. Mass print: <strong>2 cards per row | Max 6 cards per page (3 rows)</strong> - Portrait orientation.
             </div>
-            
-            <!-- Import Section -->
             <div class="import-section">
                 <h3>📊 Batch Import from Excel/Google Sheets</h3>
                 <div class="file-input">
@@ -336,7 +273,7 @@
             <form id="qrForm">
                 <div class="row">
                     <div class="form-group">
-                        <label>PS ID Number *</label>
+                        <label>PS ID (Docket Number) *</label>
                         <input type="text" id="pusId" placeholder="e.g., PS-2024-001" required>
                     </div>
                     <div class="form-group">
@@ -344,7 +281,6 @@
                         <input type="text" id="pusName" placeholder="Last Name, First Name Middle Initial" required>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="form-group">
                         <label>Gender *</label>
@@ -359,7 +295,6 @@
                         <input type="number" id="age" placeholder="46" required>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="form-group">
                         <label>Offense Category *</label>
@@ -376,7 +311,6 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="form-group">
                         <label>Supervising Officer</label>
@@ -387,7 +321,6 @@
                         <input type="text" id="cluster" placeholder="IRIGA">
                     </div>
                 </div>
-                
                 <button type="submit">🔲 Generate QR Code</button>
                 <button type="button" onclick="clearForm()">🗑️ Clear</button>
             </form>
@@ -396,23 +329,38 @@
                 <h3>📱 Person Under Supervision - QR Code</h3>
                 <div id="qrcode"></div>
                 <div class="btn-group">
-                    <button id="downloadBtn" class="btn-import">📥 Download QR (PNG)</button>
-                    <button id="printBtn" class="btn-batch">🖨️ Print QR Card</button>
+                    <button id="downloadQrBtn" class="btn-import">📥 Download QR (PNG)</button>
+                    <button id="downloadIdCardBtn" class="btn-download">🪪 Download ID Card (PNG)</button>
+                    <button id="printBtn" class="btn-batch">🖨️ Print ID Card</button>
                 </div>
             </div>
         </div>
         
-        <!-- Batch Generated QR Codes -->
-        <div class="card" id="batchCard" style="display: none;">
-            <h2>📦 Batch Generated QR Codes</h2>
-            <div id="batchList" class="batch-list"></div>
-            <div class="btn-group">
-                <button id="downloadAllBtn" style="background: #28a745;">📦 Download All QR Codes (ZIP)</button>
+        <div class="card" id="batchCard">
+            <h2 class="no-print">📦 Batch Generated QR Codes</h2>
+            <div class="mass-actions no-print">
+                <h4>📦 Mass Actions</h4>
+                <div class="btn-group" style="justify-content: flex-start; margin-top: 0;">
+                    <button id="massDownloadQrsBtn" class="btn-mass">📦 Download All QR Codes (ZIP)</button>
+                    <button id="massDownloadCardsBtn" class="btn-mass">🪪 Download All ID Cards (ZIP)</button>
+                    <button id="massPrintCardsBtn" class="btn-mass">🖨️ Print All ID Cards (Portrait | 2 per row | ≤6 per page)</button>
+                </div>
+                <div id="massProgress" class="mass-progress">
+                    <div class="progress-bar" style="display: block;">
+                        <div class="progress-fill" id="massProgressFill"></div>
+                    </div>
+                    <div id="massStatus" class="status-message status-info" style="display: block;"></div>
+                </div>
+            </div>
+            <div id="batchList" class="batch-list no-print"></div>
+            <div class="btn-group no-print">
                 <button id="clearBatchBtn" style="background: #dc3545;">🗑️ Clear All</button>
             </div>
+            <!-- Hidden container that will hold the print layout - only visible when printing -->
+            <div id="printCardsContainer" class="print-layout"></div>
         </div>
         
-        <div class="card">
+        <div class="card no-print">
             <h2>📋 Saved Persons Under Supervision</h2>
             <div id="pusList" class="batch-list">
                 <p>No records yet. Generate QR codes to add persons under supervision.</p>
@@ -423,42 +371,89 @@
             </div>
         </div>
         
-        <div class="nav-link">
-            <a href="index.html">← Back to Attendance Form</a>
+        <div class="nav-link no-print">
+            <a href="#" onclick="window.location.reload();return false;">↻ Refresh / New Session</a>
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <div id="idCardContainer" class="id-card-template"></div>
+    
     <script>
         let currentQRData = null;
         let currentQRCanvas = null;
-        let batchQRs = []; // Store batch generated QR codes
+        let batchQRs = [];
+        let currentClientDataForCard = null;
         
-        // Template format
-        const TEMPLATE_HEADERS = [
-            'PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category',
-            'Start Date', 'End Date', 'Supervising Officer', 'Cluster'
-        ];
+        const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Start Date', 'End Date', 'Supervising Officer', 'Cluster'];
         
-        // Generate QR code
         async function generateQRCode(data, size = 300) {
             return new Promise((resolve, reject) => {
                 const canvas = document.createElement('canvas');
                 canvas.width = size;
                 canvas.height = size;
-                
-                QRCode.toCanvas(canvas, data, {
-                    width: size,
-                    margin: 2,
-                    color: { dark: '#000000', light: '#ffffff' }
-                }, function(error) {
+                QRCode.toCanvas(canvas, data, { width: size, margin: 2, color: { dark: '#000000', light: '#ffffff' } }, function(error) {
                     if (error) reject(error);
                     else resolve(canvas);
                 });
             });
         }
         
-        // Display single QR
+        function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData) {
+            const issueDate = new Date().toLocaleDateString();
+            const displayName = pusName || "N/A";
+            return `
+                <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative;">
+                    <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); z-index:0;"></div>
+                    <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:8px 12px; text-align:center; position:relative; z-index:1;">
+                        <h3 style="font-size:11px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PROBATION AND PAROLE OFFICE</h3>
+                        <p style="font-size:8px; opacity:0.8;">Republic of the Philippines</p>
+                    </div>
+                    <div style="display:flex; padding:10px; gap:10px; position:relative; z-index:1;">
+                        <div style="width:95px; text-align:center;">
+                            <img src="${qrImageData}" style="width:85px; height:85px; border:1px solid #ddd; border-radius:8px; background:white; padding:4px;" alt="QR Code">
+                            <div style="font-size:7px; color:#666; margin-top:3px;">Scan for Attendance</div>
+                        </div>
+                        <div style="flex:1; padding:0 5px;">
+                            <div style="font-weight:bold; font-size:10px; color:#1e3c72; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:2px;">Person Under Supervision</div>
+                            <div style="margin-bottom:10px;"><div style="font-size:8px; font-weight:bold; color:#555;">NAME</div><div style="font-size:10px; font-weight:600; color:#2c3e50;">${escapeHtml(displayName)}</div></div>
+                            <div style="margin-bottom:10px;"><div style="font-size:8px; font-weight:bold; color:#555;">DOCKET NUMBER</div><div style="font-size:10px; font-weight:600; color:#2c3e50;">${escapeHtml(pusId)}</div></div>
+                            <div><div style="font-size:8px; font-weight:bold; color:#555;">SUPERVISION PERIOD</div><div style="font-size:9px; color:#333;">${startDate || 'N/A'} to ${endDate || 'N/A'}</div></div>
+                        </div>
+                        <div style="width:85px; text-align:center;">
+                            <div style="width:75px; height:85px; border:2px solid #ddd; border-radius:8px; background:#f5f5f5; display:flex; align-items:center; justify-content:center;"><div style="text-align:center; color:#999; font-size:10px;">📷<br><span style="font-size:7px;">Photo</span></div></div>
+                            <div style="font-size:7px; color:#999; margin-top:3px;">2x2 Photo</div>
+                            <div style="font-size:6px; color:#aaa; text-align:center; margin-top:2px;">(Paste/glue photo here)</div>
+                        </div>
+                    </div>
+                    <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; position:relative; z-index:1; border-top:1px solid #ddd;">
+                        <span>Issued: ${issueDate}</span>
+                        <span>Valid until: ${endDate || 'N/A'}</span>
+                        <span>www.irigappo.gov.ph</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+        
+        async function generateIDCardCanvas(pusId, pusName, startDate, endDate, qrImageData) {
+            const container = document.getElementById('idCardContainer');
+            const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData);
+            container.innerHTML = cardHTML;
+            await new Promise(r => setTimeout(r, 80));
+            const cardElement = container.querySelector('.official-id-card');
+            if (!cardElement) return null;
+            const canvas = await html2canvas(cardElement, { scale: 3, backgroundColor: '#ffffff', logging: false, useCORS: true });
+            container.innerHTML = '';
+            return canvas;
+        }
+        
+        async function downloadIDCard(pusId, pusName, startDate, endDate, qrImageData, filename) {
+            const canvas = await generateIDCardCanvas(pusId, pusName, startDate, endDate, qrImageData);
+            if (canvas) { const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png'); link.click(); return true; }
+            return false;
+        }
+        
         async function displayQR(data) {
             const container = document.getElementById('qrcode');
             container.innerHTML = '';
@@ -467,140 +462,82 @@
             return canvas;
         }
         
-        // Generate from single form
         document.getElementById('qrForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
             const pusId = document.getElementById('pusId').value.trim();
             const pusName = document.getElementById('pusName').value.trim();
             const age = document.getElementById('age').value.trim();
-            
-            if (!pusId || !pusName || !age) {
-                alert('Please fill in PS ID, Full Name, and Age');
-                return;
-            }
-            
-            const pusData = {
-                pusId: pusId,
-                pusName: pusName,
-                gender: document.getElementById('gender').value,
-                age: parseInt(age),
-                offenseCategory: document.getElementById('offenseCategory').value,
-                startDate: document.getElementById('startDate').value,
-                endDate: document.getElementById('endDate').value,
-                supervisingOfficer: document.getElementById('officer').value,
-                cluster: document.getElementById('cluster').value
-            };
-            
+            if (!pusId || !pusName || !age) { alert('Please fill in PS ID, Full Name, and Age'); return; }
+            const pusData = { pusId, pusName, gender: document.getElementById('gender').value, age: parseInt(age), offenseCategory: document.getElementById('offenseCategory').value, startDate: document.getElementById('startDate').value, endDate: document.getElementById('endDate').value, supervisingOfficer: document.getElementById('officer').value, cluster: document.getElementById('cluster').value };
+            currentClientDataForCard = pusData;
             currentQRData = JSON.stringify(pusData);
-            await displayQR(currentQRData);
+            const canvas = await displayQR(currentQRData);
+            currentQRCanvas = canvas;
             document.getElementById('qrResult').style.display = 'block';
             saveToLocalStorage(pusData);
         });
         
-        // Download single QR
-        document.getElementById('downloadBtn')?.addEventListener('click', function() {
+        document.getElementById('downloadQrBtn')?.addEventListener('click', function() {
             const canvas = document.querySelector('#qrcode canvas');
-            if (canvas) {
-                const link = document.createElement('a');
-                const pusId = document.getElementById('pusId').value;
-                const pusName = document.getElementById('pusName').value.replace(/[^a-z0-9]/gi, '_');
-                link.download = `QR_${pusId}_${pusName}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            }
+            if (canvas) { const pusId = document.getElementById('pusId').value; const pusName = document.getElementById('pusName').value.replace(/[^a-z0-9]/gi, '_'); const link = document.createElement('a'); link.download = `QR_${pusId}_${pusName}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }
         });
         
-        // Print single QR
-        document.getElementById('printBtn')?.addEventListener('click', function() {
+        document.getElementById('downloadIdCardBtn')?.addEventListener('click', async function() {
+            if (!currentClientDataForCard) { alert('Generate QR first'); return; }
             const canvas = document.querySelector('#qrcode canvas');
             if (!canvas) return;
-            
-            const pusId = document.getElementById('pusId').value;
-            const pusName = document.getElementById('pusName').value;
             const qrImageData = canvas.toDataURL('image/png');
-            
+            const pusId = document.getElementById('pusId').value, pusName = document.getElementById('pusName').value, startDate = document.getElementById('startDate').value, endDate = document.getElementById('endDate').value;
+            await downloadIDCard(pusId, pusName, startDate, endDate, qrImageData, `ID_Card_${pusId}_${pusName.replace(/[^a-z0-9]/gi, '_')}.png`);
+        });
+        
+        function printSingleCard(pusId, pusName, startDate, endDate, qrImageData) {
+            const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData);
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>QR Code - ${pusName}</title>
-                    <style>
-                        body { font-family: Arial; text-align: center; padding: 50px; }
-                        .qr-code img { width: 250px; height: 250px; }
-                        .info { margin-top: 20px; }
-                    </style>
-                </head>
-                <body>
-                    <h2>Iriga City PPO</h2>
-                    <h3>Person Under Supervision QR Code</h3>
-                    <div class="qr-code"><img src="${qrImageData}"></div>
-                    <div class="info"><strong>ID:</strong> ${pusId}<br><strong>Name:</strong> ${pusName}</div>
-                    <p>Scan for attendance tracking</p>
-                    <script>window.onload = () => { setTimeout(() => { window.print(); }, 500); }<\/script>
-                </body>
-                </html>
-            `);
+            printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${pusName}</title><style>*{margin:0;padding:0;box-sizing:border-box;} body{background:white;display:flex;justify-content:center;align-items:center;min-height:100vh;} @media print{body{margin:0;padding:0;}}</style></head><body><div style="margin:20px;">${cardHTML}</div><script>setTimeout(()=>{window.print();window.close();},200);<\/script></body></html>`);
             printWindow.document.close();
+        }
+        
+        document.getElementById('printBtn')?.addEventListener('click', function() {
+            if (!currentClientDataForCard) { alert('Generate QR first'); return; }
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) return;
+            const qrImageData = canvas.toDataURL('image/png');
+            const pusId = document.getElementById('pusId').value, pusName = document.getElementById('pusName').value, startDate = document.getElementById('startDate').value, endDate = document.getElementById('endDate').value;
+            printSingleCard(pusId, pusName, startDate, endDate, qrImageData);
         });
         
-        // ============================================
-        // BATCH IMPORT FROM EXCEL/GOOGLE SHEETS
-        // ============================================
-        
-        // Download template
+        // BATCH IMPORT
         document.getElementById('downloadTemplateBtn')?.addEventListener('click', function() {
-            const templateData = [TEMPLATE_HEADERS];
-            // Add example row
-            templateData.push([
-                'PUS-2024-001', 'Dela Cruz, Juan A.', 'Male', '35', 'Drug Offense',
-                '08-15-2023', '08-15-2026', 'SSPO JANET B. PAVIA', 'IRIGA'
-            ]);
-            templateData.push([
-                'PUS-2024-002', 'Reyes, Maria S.', 'Female', '42', 'Non-Drug Offense',
-                '09-01-2023', '09-01-2026', 'SSPO JANET B. PAVIA', 'NABUA'
-            ]);
-            
+            const templateData = [TEMPLATE_HEADERS, ['PS-2024-001', 'Dela Cruz, Juan A.', 'Male', '35', 'Drug Offense', '08-15-2023', '08-15-2026', 'SSPO JANET B. PAVIA', 'IRIGA'], ['PS-2024-002', 'Reyes, Maria S.', 'Female', '42', 'Non-Drug Offense', '09-01-2023', '09-01-2026', 'SSPO JANET B. PAVIA', 'NABUA']];
             const ws = XLSX.utils.aoa_to_sheet(templateData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'PUS_Template');
-            XLSX.writeFile(wb, 'Iriga_PPO_QR_Template.xlsx');
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PUS_Template'); XLSX.writeFile(wb, 'Iriga_PPO_QR_Template.xlsx');
         });
         
-        // Import and generate batch QR codes
+        async function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const firstSheet = workbook.Sheets[workbook.SheetNames[0]]; const jsonData = XLSX.utils.sheet_to_json(firstSheet); resolve(jsonData); } catch (error) { reject(error); }
+                }; reader.onerror = reject; reader.readAsArrayBuffer(file);
+            });
+        }
+        
         document.getElementById('importBtn')?.addEventListener('click', async function() {
-            const fileInput = document.getElementById('excelFile');
-            const file = fileInput.files[0];
-            const statusDiv = document.getElementById('importStatus');
-            const progressBar = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            
-            if (!file) {
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'status-message status-error';
-                statusDiv.textContent = 'Please select an Excel file first';
-                return;
-            }
-            
-            statusDiv.style.display = 'block';
-            statusDiv.className = 'status-message status-info';
-            statusDiv.textContent = 'Reading file...';
-            
+            const file = document.getElementById('excelFile').files[0];
+            const statusDiv = document.getElementById('importStatus'); const progressBar = document.getElementById('progressBar'); const progressFill = document.getElementById('progressFill');
+            if (!file) { statusDiv.style.display = 'block'; statusDiv.className = 'status-message status-error'; statusDiv.textContent = 'Select an Excel file'; return; }
+            statusDiv.style.display = 'block'; statusDiv.className = 'status-message status-info'; statusDiv.textContent = 'Reading...';
             try {
                 const data = await readExcelFile(file);
-                statusDiv.textContent = `Found ${data.length} records. Generating QR codes...`;
+                statusDiv.textContent = `Found ${data.length} records. Generating...`;
                 progressBar.style.display = 'block';
-                
                 batchQRs = [];
-                const results = [];
-                
                 for (let i = 0; i < data.length; i++) {
                     const row = data[i];
-                    progressFill.style.width = `${((i + 1) / data.length) * 100}%`;
-                    
+                    progressFill.style.width = `${((i+1)/data.length)*100}%`;
                     const pusData = {
-                        pusId: row['PUS ID'] || row['pusId'] || `PUS-${Date.now()}-${i}`,
+                        pusId: row['PS ID'] || row['pusId'] || `PS-${Date.now()}-${i}`,
                         pusName: row['Full Name'] || row['pusName'] || row['NAME OF CLIENT'] || 'Unknown',
                         gender: row['Gender'] || row['gender'] || 'Female',
                         age: parseInt(row['Age'] || row['age'] || 0),
@@ -610,253 +547,155 @@
                         supervisingOfficer: row['Supervising Officer'] || row['supervisingOfficer'] || '',
                         cluster: row['Cluster'] || row['cluster'] || ''
                     };
-                    
-                    if (!pusData.age || isNaN(pusData.age)) {
-                        statusDiv.innerHTML += `<br>⚠️ Warning: Invalid age for ${pusData.pusName}, using 0`;
-                        pusData.age = 0;
-                    }
-                    
+                    if (isNaN(pusData.age)) pusData.age = 0;
                     const qrData = JSON.stringify(pusData);
                     const canvas = await generateQRCode(qrData, 300);
-                    
-                    batchQRs.push({
-                        data: pusData,
-                        qrData: qrData,
-                        canvas: canvas,
-                        imageUrl: canvas.toDataURL('image/png')
-                    });
-                    
+                    const qrImageData = canvas.toDataURL('image/png');
+                    batchQRs.push({ data: pusData, qrData, canvas, imageUrl: qrImageData });
                     saveToLocalStorage(pusData);
-                    results.push(pusData);
                 }
-                
                 progressBar.style.display = 'none';
                 statusDiv.className = 'status-message status-success';
                 statusDiv.innerHTML = `✅ Successfully generated ${batchQRs.length} QR codes!`;
-                
                 displayBatchResults(batchQRs);
-                
+                document.getElementById('batchCard').style.display = 'block';
             } catch (error) {
-                console.error('Import error:', error);
-                statusDiv.className = 'status-message status-error';
-                statusDiv.textContent = 'Error processing file: ' + error.message;
-                progressBar.style.display = 'none';
+                statusDiv.className = 'status-message status-error'; statusDiv.textContent = 'Error: '+error.message; progressBar.style.display = 'none';
             }
         });
         
-        // Read Excel file
-        function readExcelFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                        resolve(jsonData);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
-            });
-        }
-        
-        // Display batch results
         function displayBatchResults(qrs) {
-            const batchCard = document.getElementById('batchCard');
             const batchList = document.getElementById('batchList');
-            batchCard.style.display = 'block';
-            
-            batchList.innerHTML = qrs.map((qr, index) => `
-                <div class="batch-item">
-                    <div class="batch-info">
-                        <div class="batch-name">${qr.data.pusName}</div>
-                        <div class="batch-details">
-                            ID: ${qr.data.pusId} | ${qr.data.offenseCategory} | ${qr.data.cluster || 'No Cluster'}
-                        </div>
-                    </div>
-                    <div class="batch-actions">
-                        <button class="btn-small" onclick="downloadSingleBatch(${index})">📥 Download</button>
-                        <button class="btn-small" onclick="printSingleBatch(${index})">🖨️ Print</button>
-                    </div>
-                </div>
-            `).join('');
+            batchList.innerHTML = qrs.map((qr, index) => `<div class="batch-item"><div class="batch-info"><div class="batch-name">${escapeHtml(qr.data.pusName)}</div><div class="batch-details">ID: ${escapeHtml(qr.data.pusId)} | ${qr.data.offenseCategory}</div></div><div class="batch-actions"><button class="btn-small" onclick="downloadSingleBatch(${index})">📥 QR</button><button class="btn-small" onclick="downloadSingleBatchCard(${index})">🪪 Card</button><button class="btn-small" onclick="printSingleBatchCard(${index})">🖨️ Print</button></div></div>`).join('');
         }
         
-        // Download single batch QR
-        window.downloadSingleBatch = function(index) {
-            const qr = batchQRs[index];
-            if (qr) {
-                const link = document.createElement('a');
-                link.download = `QR_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`;
-                link.href = qr.imageUrl;
-                link.click();
-            }
-        };
+        window.downloadSingleBatch = function(index) { const qr = batchQRs[index]; if(qr && qr.canvas){ const link = document.createElement('a'); link.download = `QR_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`; link.href = qr.canvas.toDataURL('image/png'); link.click(); } };
+        window.downloadSingleBatchCard = async function(index) { const qr = batchQRs[index]; if(qr) await downloadIDCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl, `ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`); };
+        window.printSingleBatchCard = function(index) { const qr = batchQRs[index]; if(qr) printSingleCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl); };
         
-        // Print single batch QR
-        window.printSingleBatch = function(index) {
-            const qr = batchQRs[index];
-            if (qr) {
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head><title>QR Code - ${qr.data.pusName}</title>
-                    <style>
-                        body { font-family: Arial; text-align: center; padding: 50px; }
-                        .qr-code img { width: 250px; height: 250px; }
-                    </style>
-                    </head>
-                    <body>
-                        <h2>Iriga City PPO</h2>
-                        <h3>Person Under Supervision QR Code</h3>
-                        <div class="qr-code"><img src="${qr.imageUrl}"></div>
-                        <div><strong>ID:</strong> ${qr.data.pusId}<br><strong>Name:</strong> ${qr.data.pusName}</div>
-                        <p>Scan for attendance tracking</p>
-                        <script>window.onload = () => { setTimeout(() => { window.print(); }, 500); }<\/script>
-                    </body>
-                    </html>
-                `);
-                printWindow.document.close();
-            }
-        };
-        
-        // Download all QR codes as ZIP
-        document.getElementById('downloadAllBtn')?.addEventListener('click', async function() {
-            if (batchQRs.length === 0) {
-                alert('No batch QR codes to download');
-                return;
+        // MASS PRINT: No UI buttons appear - cards only, 2 per row, up to 6 per page
+        document.getElementById('massPrintCardsBtn')?.addEventListener('click', function() {
+            if (batchQRs.length === 0) { alert('No batch QR codes to print'); return; }
+            
+            const cardsPerPage = 6;
+            let pagesHtml = '';
+            for (let i = 0; i < batchQRs.length; i += cardsPerPage) {
+                const pageCards = batchQRs.slice(i, i + cardsPerPage);
+                let gridItems = '';
+                for (let j = 0; j < pageCards.length; j++) {
+                    const qr = pageCards[j];
+                    gridItems += `<div class="print-card-item">${createSingleIDCardHTML(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl)}</div>`;
+                }
+                pagesHtml += `<div class="print-page"><div class="print-id-grid">${gridItems}</div></div>`;
             }
             
+            // Create a clean print window with ONLY the cards - no buttons, no UI
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<!DOCTYPE html><html><head><title>Iriga PPO ID Cards</title><style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    background: white; 
+                    padding: 0.4in; 
+                    margin: 0;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                }
+                .print-id-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 337px);
+                    justify-content: center;
+                    gap: 24px 40px;
+                    margin: 0 auto;
+                    width: fit-content;
+                }
+                .print-card-item {
+                    width: 337px;
+                    height: 212px;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .print-page {
+                    page-break-after: always;
+                    break-after: page;
+                    margin-bottom: 0;
+                }
+                .print-page:last-child {
+                    page-break-after: auto;
+                    break-after: auto;
+                }
+                @media print {
+                    body { 
+                        padding: 0.4in; 
+                        margin: 0;
+                        background: white;
+                    }
+                    .print-page {
+                        page-break-after: always;
+                        break-after: page;
+                    }
+                    .print-page:last-child {
+                        page-break-after: auto;
+                    }
+                    .print-id-grid {
+                        gap: 20px 36px;
+                    }
+                }
+                @page {
+                    size: portrait;
+                    margin: 0.4in;
+                }
+            </style></head><body>${pagesHtml}</body></html>`);
+            printWindow.document.close();
+            // Auto-trigger print after a short delay
+            setTimeout(() => { printWindow.print(); }, 300);
+        });
+        
+        document.getElementById('massDownloadQrsBtn')?.addEventListener('click', async function() {
+            if(batchQRs.length===0){ alert('No QR codes'); return; }
+            const zip = new JSZip();
+            for(let qr of batchQRs){ const base64 = qr.imageUrl.split(',')[1]; const safeName = qr.data.pusName.replace(/[^a-z0-9]/gi, '_'); zip.file(`QR_${qr.data.pusId}_${safeName}.png`, base64, { base64: true }); }
+            const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `All_QR_Codes_${Date.now()}.zip`; link.click(); URL.revokeObjectURL(link.href);
+        });
+        
+        document.getElementById('massDownloadCardsBtn')?.addEventListener('click', async function() {
+            if (batchQRs.length === 0) { alert('No batch QR codes'); return; }
+            const massProgress = document.getElementById('massProgress'); const massProgressFill = document.getElementById('massProgressFill'); const massStatus = document.getElementById('massStatus');
+            massProgress.style.display = 'block'; massStatus.textContent = `Generating ${batchQRs.length} ID cards...`; massProgressFill.style.width = '0%';
             const zip = new JSZip();
             for (let i = 0; i < batchQRs.length; i++) {
                 const qr = batchQRs[i];
-                const base64Data = qr.imageUrl.split(',')[1];
-                zip.file(`QR_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`, base64Data, { base64: true });
+                massProgressFill.style.width = `${((i+1)/batchQRs.length)*100}%`; massStatus.textContent = `Processing ${i+1}/${batchQRs.length}: ${qr.data.pusName}`;
+                const canvas = await generateIDCardCanvas(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl);
+                if(canvas){ const base64Data = canvas.toDataURL('image/png').split(',')[1]; zip.file(`ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`, base64Data, { base64: true }); }
+                await new Promise(r => setTimeout(r, 50));
             }
-            
-            const content = await zip.generateAsync({ type: 'blob' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(content);
-            link.download = `Iriga_PPO_QR_Codes_${new Date().toISOString().slice(0, 19)}.zip`;
-            link.click();
-            URL.revokeObjectURL(link.href);
+            const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `All_ID_Cards_${Date.now()}.zip`; link.click(); URL.revokeObjectURL(link.href);
+            massStatus.textContent = '✅ All cards ready!'; setTimeout(()=>{ massProgress.style.display='none'; }, 2000);
         });
         
-        // Clear batch
-        document.getElementById('clearBatchBtn')?.addEventListener('click', function() {
-            batchQRs = [];
-            document.getElementById('batchCard').style.display = 'none';
-            document.getElementById('importStatus').style.display = 'none';
-        });
-        
-        // ============================================
-        // LOCAL STORAGE FUNCTIONS
-        // ============================================
+        document.getElementById('clearBatchBtn')?.addEventListener('click', function() { if(confirm('Clear batch?')){ batchQRs = []; document.getElementById('batchCard').style.display = 'none'; document.getElementById('importStatus').style.display = 'none'; } });
         
         function saveToLocalStorage(pusData) {
             let records = JSON.parse(localStorage.getItem('iriga_ppo_pus') || '[]');
-            const existingIndex = records.findIndex(r => r.pusId === pusData.pusId);
-            if (existingIndex >= 0) {
-                records[existingIndex] = pusData;
-            } else {
-                records.push(pusData);
-            }
+            const idx = records.findIndex(r => r.pusId === pusData.pusId);
+            if(idx>=0) records[idx] = pusData; else records.push(pusData);
             localStorage.setItem('iriga_ppo_pus', JSON.stringify(records));
             displayPUSList(records);
         }
         
         function displayPUSList(records) {
             const container = document.getElementById('pusList');
-            if (!records || records.length === 0) {
-                container.innerHTML = '<p>No records yet. Generate QR codes to add persons under supervision.</p>';
-                return;
-            }
-            container.innerHTML = records.map(record => `
-                <div class="batch-item" onclick="loadPUS('${record.pusId}')">
-                    <div class="batch-info">
-                        <div class="batch-name">${record.pusName} <span style="font-size:10px; background:#2a5298; color:white; padding:2px 6px; border-radius:10px;">${record.pusId}</span></div>
-                        <div class="batch-details">${record.offenseCategory} | ${record.cluster || 'No Cluster'} | Age: ${record.age}</div>
-                    </div>
-                    <button class="btn-small" onclick="event.stopPropagation(); regenerateQR('${record.pusId}')">🔄 Regenerate</button>
-                </div>
-            `).join('');
+            if(!records.length){ container.innerHTML = '<p>No records yet. Generate QR codes to add persons under supervision.</p>'; return; }
+            container.innerHTML = records.map(record => `<div class="batch-item" onclick="loadPUS('${record.pusId}')"><div class="batch-info"><div class="batch-name">${escapeHtml(record.pusName)} <span style="font-size:10px; background:#2a5298; color:white; padding:2px 6px; border-radius:10px;">${escapeHtml(record.pusId)}</span></div><div class="batch-details">${record.offenseCategory} | ${record.cluster||'No Cluster'}</div></div><button class="btn-small" onclick="event.stopPropagation(); regenerateQR('${record.pusId}')">🔄 Regenerate</button></div>`).join('');
         }
         
-        function loadPUS(pusId) {
-            const records = JSON.parse(localStorage.getItem('iriga_ppo_pus') || '[]');
-            const record = records.find(r => r.pusId === pusId);
-            if (record) {
-                document.getElementById('pusId').value = record.pusId;
-                document.getElementById('pusName').value = record.pusName;
-                document.getElementById('gender').value = record.gender;
-                document.getElementById('age').value = record.age;
-                document.getElementById('offenseCategory').value = record.offenseCategory;
-                document.getElementById('startDate').value = record.startDate || '';
-                document.getElementById('endDate').value = record.endDate || '';
-                document.getElementById('officer').value = record.supervisingOfficer || '';
-                document.getElementById('cluster').value = record.cluster || '';
-                document.getElementById('qrForm').dispatchEvent(new Event('submit'));
-            }
-        }
-        
-        function regenerateQR(pusId) { loadPUS(pusId); }
-        
-        function exportAllPUS() {
-            const records = JSON.parse(localStorage.getItem('iriga_ppo_pus') || '[]');
-            if (records.length === 0) { alert('No records to export'); return; }
-            const dataStr = JSON.stringify(records, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `iriga_ppo_pus_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            alert(`✅ Exported ${records.length} records`);
-        }
-        
-        function clearAllPUS() {
-            if (confirm('⚠️ Delete ALL records? This cannot be undone.')) {
-                localStorage.removeItem('iriga_ppo_pus');
-                displayPUSList([]);
-                clearForm();
-                alert('All records cleared');
-            }
-        }
-        
-        function clearForm() {
-            document.getElementById('qrForm').reset();
-            document.getElementById('qrResult').style.display = 'none';
-            currentQRData = null;
-        }
-        
-        // Template help
-        document.getElementById('templateHelpLink')?.addEventListener('click', function(e) {
-            e.preventDefault();
-            alert(`📋 Template Format Requirements:
-
-                Required Columns (headers must match exactly):
-                - PUS ID (unique identifier)
-                - Full Name (Last, First MI)
-                - Gender (Male/Female/LGBTQIA+)
-                - Age (number)
-                - Offense Category (Drug Offense/Non-Drug Offense)
-                - Start Date (MM-DD-YYYY) - optional
-                - End Date (MM-DD-YYYY) - optional
-                - Supervising Officer - optional
-                - Cluster - optional
-
-                Download the template for example format.`);
-        });
-        
-        // Load saved clients
-        const savedRecords = JSON.parse(localStorage.getItem('iriga_ppo_pus') || '[]');
-        displayPUSList(savedRecords);
+        window.loadPUS = function(pusId) { const records = JSON.parse(localStorage.getItem('iriga_ppo_pus')||'[]'); const record = records.find(r=>r.pusId===pusId); if(record){ document.getElementById('pusId').value=record.pusId; document.getElementById('pusName').value=record.pusName; document.getElementById('gender').value=record.gender; document.getElementById('age').value=record.age; document.getElementById('offenseCategory').value=record.offenseCategory; document.getElementById('startDate').value=record.startDate||''; document.getElementById('endDate').value=record.endDate||''; document.getElementById('officer').value=record.supervisingOfficer||''; document.getElementById('cluster').value=record.cluster||''; document.getElementById('qrForm').dispatchEvent(new Event('submit')); } };
+        window.regenerateQR = function(pusId) { loadPUS(pusId); };
+        window.exportAllPUS = function() { const records = JSON.parse(localStorage.getItem('iriga_ppo_pus')||'[]'); if(!records.length){ alert('No records'); return; } const blob = new Blob([JSON.stringify(records,null,2)], {type:'application/json'}); const a=document.createElement('a'); a.download=`iriga_ppo_pus_${new Date().toISOString().split('T')[0]}.json`; a.href=URL.createObjectURL(blob); a.click(); URL.revokeObjectURL(a.href); };
+        window.clearAllPUS = function() { if(confirm('Delete ALL records?')){ localStorage.removeItem('iriga_ppo_pus'); displayPUSList([]); clearForm(); } };
+        function clearForm() { document.getElementById('qrForm').reset(); document.getElementById('qrResult').style.display = 'none'; currentQRData=null; currentClientDataForCard=null; }
+        document.getElementById('templateHelpLink')?.addEventListener('click',(e)=>{ e.preventDefault(); alert("📋 Required headers: PS ID, Full Name, Gender, Age, Offense Category, Start Date, End Date, Supervising Officer, Cluster"); });
+        const saved = JSON.parse(localStorage.getItem('iriga_ppo_pus')||'[]');
+        displayPUSList(saved);
         document.getElementById('qrResult').style.display = 'none';
     </script>
 </body>
