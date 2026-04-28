@@ -125,83 +125,27 @@
         .status-info { background: #d1ecf1; color: #0c5460; }
         .mass-progress { margin-top: 15px; display: none; }
         
-        /* CRITICAL: HIDE ALL UI ELEMENTS WHEN PRINTING */
+        /* PRINT HIDE ALL UI */
         @media print {
-            /* Hide everything except the actual ID cards */
-            body {
-                background: white;
-                padding: 0;
-                margin: 0;
-            }
-            /* Hide all buttons, forms, cards with UI, navigation, etc */
-            .no-print,
-            button,
-            .btn-group,
-            .mass-actions,
-            .import-section,
-            .card:first-of-type .btn-group,
-            .card:first-of-type .qr-container .btn-group,
-            .batch-actions,
-            .btn-small,
-            #batchCard .btn-group,
-            .mass-progress,
-            .qr-container .btn-group,
-            .nav-link,
-            .header,
-            .info-badge,
-            .card:first-of-type h2,
-            .card:first-of-type form,
-            .card:first-of-type .qr-container h3,
-            #batchCard h2,
-            .mass-actions h4,
-            .card:last-of-type h2,
-            .card:last-of-type .btn-group,
-            #pusList,
-            #batchList,
-            .container > .card:first-of-type > .import-section,
-            .container > .card:first-of-type > .row,
-            .container > .card:first-of-type > form,
-            button[onclick],
-            .file-input,
-            #excelFile,
-            #importBtn,
-            #downloadTemplateBtn,
-            #templateHelpLink,
-            #importStatus,
-            .progress-bar {
+            body { background: white; padding: 0; margin: 0; }
+            .no-print, button, .btn-group, .mass-actions, .import-section,
+            .card:first-of-type .btn-group, .card:first-of-type .qr-container .btn-group,
+            .batch-actions, .btn-small, #batchCard .btn-group, .mass-progress,
+            .qr-container .btn-group, .nav-link, .header, .info-badge,
+            .card:first-of-type h2, .card:first-of-type form, .card:first-of-type .qr-container h3,
+            #batchCard h2, .mass-actions h4, .card:last-of-type h2, .card:last-of-type .btn-group,
+            #pusList, #batchList, .container > .card:first-of-type > .import-section,
+            .container > .card:first-of-type > .row, .container > .card:first-of-type > form,
+            button[onclick], .file-input, #excelFile, #importBtn, #downloadTemplateBtn,
+            #templateHelpLink, #importStatus, .progress-bar, #batchCard .batch-list {
                 display: none !important;
             }
-            /* Show only the batch card container but hide its UI elements */
-            #batchCard {
-                display: block !important;
-                background: white;
-                padding: 0;
-                margin: 0;
-                box-shadow: none;
-            }
-            /* Hide the batch card's inner UI except the print container */
-            #batchCard .mass-actions,
-            #batchCard .batch-list,
-            #batchCard .btn-group,
-            #batchCard h2 {
-                display: none !important;
-            }
-            /* The print container with cards becomes visible */
-            .print-container-only {
-                display: block !important;
-                visibility: visible !important;
-                margin: 0;
-                padding: 0;
-            }
+            #batchCard { display: block !important; background: white; padding: 0; margin: 0; box-shadow: none; }
+            .print-layout { display: block !important; }
         }
         
-        /* Print layout: 2 cards per row, up to 6 per page, portrait */
-        .print-layout {
-            display: none;
-        }
-        .print-layout.active-print {
-            display: block;
-        }
+        /* Print layout: 2 cards per row, up to 6 per page */
+        .print-layout { display: none; }
         .print-id-grid {
             display: grid;
             grid-template-columns: repeat(2, 337px);
@@ -219,28 +163,14 @@
         .print-page {
             page-break-after: always;
             break-after: page;
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
-        .print-page:last-child {
-            page-break-after: auto;
-            break-after: auto;
-        }
+        .print-page:last-child { page-break-after: auto; break-after: auto; }
         @media print {
-            .print-id-grid {
-                gap: 20px 36px;
-                margin: 0 auto;
-            }
-            .print-page {
-                page-break-after: always;
-                break-after: page;
-            }
-            .print-page:last-child {
-                page-break-after: auto;
-            }
-            @page {
-                size: portrait;
-                margin: 0.5in;
-            }
+            .print-id-grid { gap: 20px 36px; }
+            .print-page { page-break-after: always; break-after: page; }
+            .print-page:last-child { page-break-after: auto; }
+            @page { size: portrait; margin: 0.5in; }
         }
     </style>
 </head>
@@ -248,12 +178,12 @@
     <div class="container">
         <div class="header no-print">
             <h1>🏢 Iriga City PPO</h1>
-            <p>QR Code Generator - ID Cards | Print Layout: Portrait, 2 per row, up to 6 per page</p>
+            <p>QR Code Generator - ID Cards | Bigger QR on ID | Print: 2 per row, up to 6 per page</p>
         </div>
         
         <div class="card no-print">
             <div class="info-badge">
-                ✅ <strong>Batch Import from Excel!</strong> Generate QR codes & ID cards. Mass print: <strong>2 cards per row | Max 6 cards per page (3 rows)</strong> - Portrait orientation.
+                ✅ <strong>Batch Import from Excel!</strong> Generate QR codes & ID cards. <strong>QR code is now LARGER on the ID card</strong> for better scanning.
             </div>
             <div class="import-section">
                 <h3>📊 Batch Import from Excel/Google Sheets</h3>
@@ -343,7 +273,7 @@
                 <div class="btn-group" style="justify-content: flex-start; margin-top: 0;">
                     <button id="massDownloadQrsBtn" class="btn-mass">📦 Download All QR Codes (ZIP)</button>
                     <button id="massDownloadCardsBtn" class="btn-mass">🪪 Download All ID Cards (ZIP)</button>
-                    <button id="massPrintCardsBtn" class="btn-mass">🖨️ Print All ID Cards (Portrait | 2 per row | ≤6 per page)</button>
+                    <button id="massPrintCardsBtn" class="btn-mass">🖨️ Print All ID Cards (2 per row | ≤6 per page)</button>
                 </div>
                 <div id="massProgress" class="mass-progress">
                     <div class="progress-bar" style="display: block;">
@@ -356,7 +286,6 @@
             <div class="btn-group no-print">
                 <button id="clearBatchBtn" style="background: #dc3545;">🗑️ Clear All</button>
             </div>
-            <!-- Hidden container that will hold the print layout - only visible when printing -->
             <div id="printCardsContainer" class="print-layout"></div>
         </div>
         
@@ -398,37 +327,53 @@
             });
         }
         
+        // FIXED: Bigger QR code (100x100) WITH PROPER FOOTER - no extra bottom space, balanced layout
         function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData) {
             const issueDate = new Date().toLocaleDateString();
             const displayName = pusName || "N/A";
             return `
-                <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative;">
-                    <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); z-index:0;"></div>
-                    <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:8px 12px; text-align:center; position:relative; z-index:1;">
-                        <h3 style="font-size:11px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PROBATION AND PAROLE OFFICE</h3>
-                        <p style="font-size:8px; opacity:0.8;">Republic of the Philippines</p>
+                <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column;">
+                    <!-- Header -->
+                    <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:6px 0; text-align:center; flex-shrink:0;">
+                        <h3 style="font-size:10px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PROBATION AND PAROLE OFFICE</h3>
+                        <p style="font-size:7px; opacity:0.8;">Republic of the Philippines</p>
                     </div>
-                    <div style="display:flex; padding:10px; gap:10px; position:relative; z-index:1;">
-                        <div style="width:95px; text-align:center;">
-                            <img src="${qrImageData}" style="width:85px; height:85px; border:1px solid #ddd; border-radius:8px; background:white; padding:4px;" alt="QR Code">
-                            <div style="font-size:7px; color:#666; margin-top:3px;">Scan for Attendance</div>
+                    <!-- Middle Content - filled completely -->
+                    <div style="display:flex; padding:10px 12px; gap:12px; flex:1; align-items:center;">
+                        <!-- BIGGER QR CODE: 100x100 -->
+                        <div style="width:100px; text-align:center; flex-shrink:0;">
+                            <img src="${qrImageData}" style="width:95px; height:95px; border:1px solid #ddd; border-radius:8px; background:white; padding:3px;" alt="QR Code">
+                            <div style="font-size:6px; color:#666; margin-top:2px;">Scan for Attendance</div>
                         </div>
-                        <div style="flex:1; padding:0 5px;">
-                            <div style="font-weight:bold; font-size:10px; color:#1e3c72; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:2px;">Person Under Supervision</div>
-                            <div style="margin-bottom:10px;"><div style="font-size:8px; font-weight:bold; color:#555;">NAME</div><div style="font-size:10px; font-weight:600; color:#2c3e50;">${escapeHtml(displayName)}</div></div>
-                            <div style="margin-bottom:10px;"><div style="font-size:8px; font-weight:bold; color:#555;">DOCKET NUMBER</div><div style="font-size:10px; font-weight:600; color:#2c3e50;">${escapeHtml(pusId)}</div></div>
-                            <div><div style="font-size:8px; font-weight:bold; color:#555;">SUPERVISION PERIOD</div><div style="font-size:9px; color:#333;">${startDate || 'N/A'} to ${endDate || 'N/A'}</div></div>
+                        <!-- Info Section -->
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:bold; font-size:9px; color:#1e3c72; border-bottom:1px solid #ddd; margin-bottom:6px; padding-bottom:2px;">Person Under Supervision</div>
+                            <div style="margin-bottom:5px;">
+                                <div style="font-size:7px; font-weight:bold; color:#555;">NAME</div>
+                                <div style="font-size:9px; font-weight:600; color:#2c3e50; line-height:1.2; word-wrap:break-word;">${escapeHtml(displayName)}</div>
+                            </div>
+                            <div style="margin-bottom:5px;">
+                                <div style="font-size:7px; font-weight:bold; color:#555;">DOCKET NUMBER</div>
+                                <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(pusId)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:7px; font-weight:bold; color:#555;">SUPERVISION PERIOD</div>
+                                <div style="font-size:8px; color:#333;">${startDate || 'N/A'} to ${endDate || 'N/A'}</div>
+                            </div>
                         </div>
-                        <div style="width:85px; text-align:center;">
-                            <div style="width:75px; height:85px; border:2px solid #ddd; border-radius:8px; background:#f5f5f5; display:flex; align-items:center; justify-content:center;"><div style="text-align:center; color:#999; font-size:10px;">📷<br><span style="font-size:7px;">Photo</span></div></div>
-                            <div style="font-size:7px; color:#999; margin-top:3px;">2x2 Photo</div>
-                            <div style="font-size:6px; color:#aaa; text-align:center; margin-top:2px;">(Paste/glue photo here)</div>
+                        <!-- Photo Area -->
+                        <div style="width:75px; text-align:center; flex-shrink:0;">
+                            <div style="width:68px; height:78px; border:1.5px solid #ccc; border-radius:8px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+                                <div style="text-align:center; color:#aaa; font-size:10px;">📷<br><span style="font-size:6px;">Photo</span></div>
+                            </div>
+                            <div style="font-size:6px; color:#999; margin-top:2px;">2x2 Photo</div>
                         </div>
                     </div>
-                    <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; position:relative; z-index:1; border-top:1px solid #ddd;">
+                    <!-- Footer - properly placed at bottom -->
+                    <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                         <span>Issued: ${issueDate}</span>
                         <span>Valid until: ${endDate || 'N/A'}</span>
-                        <span>www.irigappo.gov.ph</span>
+                        <span>www.irigacityppo@gmail.com</span>
                     </div>
                 </div>
             `;
@@ -440,7 +385,7 @@
             const container = document.getElementById('idCardContainer');
             const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData);
             container.innerHTML = cardHTML;
-            await new Promise(r => setTimeout(r, 80));
+            await new Promise(r => setTimeout(r, 100));
             const cardElement = container.querySelector('.official-id-card');
             if (!cardElement) return null;
             const canvas = await html2canvas(cardElement, { scale: 3, backgroundColor: '#ffffff', logging: false, useCORS: true });
@@ -573,7 +518,7 @@
         window.downloadSingleBatchCard = async function(index) { const qr = batchQRs[index]; if(qr) await downloadIDCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl, `ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`); };
         window.printSingleBatchCard = function(index) { const qr = batchQRs[index]; if(qr) printSingleCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl); };
         
-        // MASS PRINT: No UI buttons appear - cards only, 2 per row, up to 6 per page
+        // MASS PRINT: Clean window with ONLY cards, fixed footer, no extra spacing
         document.getElementById('massPrintCardsBtn')?.addEventListener('click', function() {
             if (batchQRs.length === 0) { alert('No batch QR codes to print'); return; }
             
@@ -589,63 +534,23 @@
                 pagesHtml += `<div class="print-page"><div class="print-id-grid">${gridItems}</div></div>`;
             }
             
-            // Create a clean print window with ONLY the cards - no buttons, no UI
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`<!DOCTYPE html><html><head><title>Iriga PPO ID Cards</title><style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { 
-                    background: white; 
-                    padding: 0.4in; 
-                    margin: 0;
-                    font-family: 'Segoe UI', Arial, sans-serif;
+                body { background: white; padding: 0.4in; margin: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+                .print-id-grid { display: grid; grid-template-columns: repeat(2, 337px); justify-content: center; gap: 20px 36px; margin: 0 auto; width: fit-content; }
+                .print-card-item { width: 337px; height: 212px; page-break-inside: avoid; break-inside: avoid; }
+                .print-page { page-break-after: always; break-after: page; margin-bottom: 0; }
+                .print-page:last-child { page-break-after: auto; break-after: auto; }
+                @media print { 
+                    body { padding: 0.3in; } 
+                    .print-page { page-break-after: always; } 
+                    .print-page:last-child { page-break-after: auto; } 
+                    .print-id-grid { gap: 18px 32px; }
                 }
-                .print-id-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 337px);
-                    justify-content: center;
-                    gap: 24px 40px;
-                    margin: 0 auto;
-                    width: fit-content;
-                }
-                .print-card-item {
-                    width: 337px;
-                    height: 212px;
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                .print-page {
-                    page-break-after: always;
-                    break-after: page;
-                    margin-bottom: 0;
-                }
-                .print-page:last-child {
-                    page-break-after: auto;
-                    break-after: auto;
-                }
-                @media print {
-                    body { 
-                        padding: 0.4in; 
-                        margin: 0;
-                        background: white;
-                    }
-                    .print-page {
-                        page-break-after: always;
-                        break-after: page;
-                    }
-                    .print-page:last-child {
-                        page-break-after: auto;
-                    }
-                    .print-id-grid {
-                        gap: 20px 36px;
-                    }
-                }
-                @page {
-                    size: portrait;
-                    margin: 0.4in;
-                }
+                @page { size: portrait; margin: 0.4in; }
             </style></head><body>${pagesHtml}</body></html>`);
             printWindow.document.close();
-            // Auto-trigger print after a short delay
             setTimeout(() => { printWindow.print(); }, 300);
         });
         
