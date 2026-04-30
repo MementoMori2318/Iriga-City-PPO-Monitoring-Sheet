@@ -1,6 +1,6 @@
 // ============================================
 // IRIGA PPO - QR CODE & ID CARD GENERATOR
-// WITH LOGIN REQUIREMENT
+// SHARES LOGIN SESSION WITH INDEX.HTML
 // ============================================
 
 let currentQRData = null;
@@ -9,7 +9,6 @@ let batchQRs = [];
 let currentClientDataForCard = null;
 let currentUser = null;
 
-const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
 const AUTHORIZED_EMAILS = [
     'iace2318i@gmail.com',
     'wq.rodalyn@gmail.com',
@@ -19,101 +18,36 @@ const AUTHORIZED_EMAILS = [
 const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Start Date', 'End Date', 'Supervising Officer', 'Cluster'];
 
 // ============================================
-// LOGIN FUNCTIONS
+// SESSION CHECK - SHARED WITH INDEX.HTML
 // ============================================
 
-function initGoogleSignIn() {
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-        auto_select: false
-    });
-    
-    google.accounts.id.renderButton(
-        document.getElementById('g_id_signin_qr'),
-        { 
-            type: 'standard', 
-            theme: 'outline', 
-            size: 'large', 
-            text: 'signin_with',
-            shape: 'rectangular',
-            width: 280
-        }
-    );
-}
-
-function handleCredentialResponse(response) {
-    try {
-        const payload = JSON.parse(atob(response.credential.split('.')[1]));
-        const userEmail = payload.email;
-        
-        if (AUTHORIZED_EMAILS.includes(userEmail)) {
-            currentUser = {
-                email: userEmail,
-                name: payload.name,
-                picture: payload.picture
-            };
-            
-            // Show main content, hide login screen
-            document.getElementById('loginRequired').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            
-            // Update user info bar
-            document.getElementById('userNameDisplay').textContent = currentUser.name || currentUser.email;
-            document.getElementById('userEmailDisplay').textContent = currentUser.email;
-            if (currentUser.picture) document.getElementById('userAvatar').src = currentUser.picture;
-            
-            // Save session
-            localStorage.setItem('qr_loggedInUser', JSON.stringify(currentUser));
-            
-            showStatusMessage(`Welcome, ${currentUser.name || currentUser.email}!`, 'success');
-        } else {
-            showStatusMessage('Unauthorized: Your email is not registered.', 'error');
-            google.accounts.id.disableAutoSelect();
-        }
-    } catch (e) {
-        showStatusMessage('Login failed. Please try again.', 'error');
-    }
-}
-
 function checkSession() {
-    const saved = localStorage.getItem('qr_loggedInUser');
+    const saved = localStorage.getItem('loggedInUser');
     if (saved) {
         const user = JSON.parse(saved);
         if (AUTHORIZED_EMAILS.includes(user.email)) {
             currentUser = user;
-            document.getElementById('loginRequired').style.display = 'none';
+            // Show main content, hide expired message
+            document.getElementById('sessionExpired').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
+            // Update user info bar
             document.getElementById('userNameDisplay').textContent = user.name || user.email;
             document.getElementById('userEmailDisplay').textContent = user.email;
             if (user.picture) document.getElementById('userAvatar').src = user.picture;
             return true;
         } else {
-            localStorage.removeItem('qr_loggedInUser');
+            localStorage.removeItem('loggedInUser');
         }
     }
+    // No valid session - show expired message
+    document.getElementById('sessionExpired').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
     return false;
 }
 
 function logout() {
-    google.accounts.id.disableAutoSelect();
-    localStorage.removeItem('qr_loggedInUser');
-    currentUser = null;
-    document.getElementById('loginRequired').style.display = 'block';
-    document.getElementById('mainContent').style.display = 'none';
-    showStatusMessage('You have been signed out.', 'info');
-}
-
-function showStatusMessage(msg, type) {
-    const statusDiv = document.getElementById('importStatus');
-    if (statusDiv) {
-        statusDiv.style.display = 'block';
-        statusDiv.className = `status-message status-${type}`;
-        statusDiv.textContent = msg;
-        setTimeout(() => {
-            if (statusDiv.textContent === msg) statusDiv.style.display = 'none';
-        }, 3000);
-    }
+    localStorage.removeItem('loggedInUser');
+    window.location.href = 'index.html';
 }
 
 // ============================================
@@ -176,7 +110,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
             </div>
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
-               
+                
                 <span>www.irigacityppo@gmail.com</span>
             </div>
         </div>
@@ -614,14 +548,11 @@ document.getElementById('logoutBtn')?.addEventListener('click', function() {
 });
 
 // ============================================
-// INITIALIZATION
+// INITIALIZATION - CHECK SESSION ONLY
 // ============================================
 
-// Check for existing session first
-if (!checkSession()) {
-    // Show login screen and initialize Google Sign-In
-    initGoogleSignIn();
-}
+// Check if user is logged in (session from index.html)
+checkSession();
 
 const saved = JSON.parse(localStorage.getItem('iriga_ppo_pus')||'[]');
 displayPUSList(saved);

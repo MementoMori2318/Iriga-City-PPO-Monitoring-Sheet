@@ -9,30 +9,39 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="container">
-        <div class="header no-print">
+        <div class="header">
             <h1>🏢 Iriga City PPO</h1>
             <p>QR Code & ID Card Generator</p>
         </div>
         
-        <!-- Login Required Message (shown when not logged in) -->
-        <div id="loginRequired" class="card" style="text-align: center;">
+        <!-- Session Expired / Not Logged In Message -->
+        <div id="sessionExpired" class="card" style="text-align: center; display: none;">
             <div class="login-section" style="margin: 0;">
-                <h2>🔐 Authentication Required</h2>
-                <p>Please log in to access the QR Code Generator</p>
-                <div id="g_id_signin_qr" class="g_id_signin" style="justify-content: center;"></div>
-                <p style="font-size: 0.75rem; margin-top: 15px;">Only authorized PPO officers can access this tool</p>
+                <h2>🔐 Session Required</h2>
+                <p>Please log in from the main attendance page first</p>
                 <div style="margin-top: 20px;">
-                    <a href="index.html" style="background: #2a5298; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">← Back to Attendance Form</a>
+                    <a href="index.html" style="background: #2a5298; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">← Go to Login Page</a>
                 </div>
             </div>
         </div>
         
-        <!-- Main Content (hidden until login) -->
+        <!-- Main Content (hidden until session verified) -->
         <div id="mainContent" style="display: none;">
+            <!-- User Info Bar -->
+            <div id="userInfoBar" class="user-info" style="display: flex; margin-bottom: 20px;">
+                <div class="user-details">
+                    <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+                    <div class="user-text">
+                        <div class="user-name" id="userNameDisplay"></div>
+                        <div class="user-email" id="userEmailDisplay"></div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Sign Out</button>
+            </div>
+            
             <div class="card">
                 <div class="info-badge">
                     ✅ <strong>Batch Import from Excel!</strong> Generate QR codes & ID cards.
@@ -108,18 +117,6 @@
                         <button type="button" onclick="clearForm()">🗑️ Clear</button>
                     </div>
                 </form>
-            </div>
-            
-            <!-- User Info Bar -->
-            <div id="userInfoBar" class="user-info" style="display: flex; margin-bottom: 20px;">
-                <div class="user-details">
-                    <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
-                    <div class="user-text">
-                        <div class="user-name" id="userNameDisplay"></div>
-                        <div class="user-email" id="userEmailDisplay"></div>
-                    </div>
-                </div>
-                <button id="logoutBtn" class="logout-btn">Sign Out</button>
             </div>
             
             <div class="card" id="batchCard" style="display: none;">
