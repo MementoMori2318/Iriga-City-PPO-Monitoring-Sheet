@@ -25,9 +25,10 @@ async function generateQRCode(data, size = 300) {
     });
 }
 
-function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData, cluster) {
+function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrImageData) {
     const issueDate = new Date().toLocaleDateString();
     const displayName = pusName || "N/A";
+    const displayCluster = cluster || "N/A";
     return `
         <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column;">
             <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:6px 0; text-align:center; flex-shrink:0;">
@@ -47,7 +48,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData,
                     </div>
                     <div style="margin-bottom:5px;">
                         <div style="font-size:7px; font-weight:bold; color:#555;">CLUSTER</div>
-                        <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(clientData.cluster)}</div>
+                        <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(displayCluster)}</div>
                     </div>
                     <div>
                         <div style="font-size:7px; font-weight:bold; color:#555;">SUPERVISION PERIOD</div>
@@ -58,11 +59,13 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData,
                     <div style="width:68px; height:78px; border:1.5px solid #ccc; border-radius:8px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; margin:0 auto;">
                         <div style="text-align:center; color:#aaa; font-size:10px;">📷<br><span style="font-size:6px;">Photo</span></div>
                     </div>
+                    <div style="font-size:6px; color:#999; margin-top:2px;">2x2 Photo</div>
+                    <div style="font-size:5px; color:#aaa; text-align:center; margin-top:1px;">(Paste/glue photo)</div>
                 </div>
             </div>
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
-                
+                <span>Valid until: ${endDate || 'N/A'}</span>
                 <span>www.irigacityppo@gmail.com</span>
             </div>
         </div>
@@ -79,9 +82,9 @@ function escapeHtml(str) {
     }); 
 }
 
-async function generateIDCardCanvas(pusId, pusName, startDate, endDate, qrImageData) {
+async function generateIDCardCanvas(pusId, pusName, startDate, endDate, cluster, qrImageData) {
     const container = document.getElementById('idCardContainer');
-    const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData);
+    const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrImageData);
     container.innerHTML = cardHTML;
     await new Promise(r => setTimeout(r, 100));
     const cardElement = container.querySelector('.official-id-card');
@@ -96,8 +99,8 @@ async function generateIDCardCanvas(pusId, pusName, startDate, endDate, qrImageD
     return canvas;
 }
 
-async function downloadIDCard(pusId, pusName, startDate, endDate, qrImageData, filename) {
-    const canvas = await generateIDCardCanvas(pusId, pusName, startDate, endDate, qrImageData);
+async function downloadIDCard(pusId, pusName, startDate, endDate, cluster, qrImageData, filename) {
+    const canvas = await generateIDCardCanvas(pusId, pusName, startDate, endDate, cluster, qrImageData);
     if (canvas) { 
         const link = document.createElement('a'); 
         link.download = filename; 
@@ -113,25 +116,16 @@ function showQRModal(qrCanvas, clientData) {
     const modalQrcode = document.getElementById('modalQrcode');
     const modalClientInfo = document.getElementById('modalClientInfo');
     
-    // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
-    
-    // Clear previous content
     modalQrcode.innerHTML = '';
     
-    // Create a new canvas element with the QR code
     const canvas = document.createElement('canvas');
     canvas.width = 180;
     canvas.height = 180;
     const ctx = canvas.getContext('2d');
-    
-    // Draw the QR code from the original canvas
     ctx.drawImage(qrCanvas, 0, 0, 180, 180);
-    
-    // Add the canvas to modal
     modalQrcode.appendChild(canvas);
     
-    // Add ALL client information - complete details
     modalClientInfo.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;">
             <div><strong>📋 PS ID:</strong></div>
@@ -231,8 +225,9 @@ document.getElementById('modalDownloadCardBtn')?.addEventListener('click', async
     const pusName = currentClientDataForCard.pusName;
     const startDate = currentClientDataForCard.startDate;
     const endDate = currentClientDataForCard.endDate;
+    const cluster = currentClientDataForCard.cluster;
     
-    await downloadIDCard(pusId, pusName, startDate, endDate, qrImageData, `ID_Card_${pusId}_${pusName.replace(/[^a-z0-9]/gi, '_')}.png`);
+    await downloadIDCard(pusId, pusName, startDate, endDate, cluster, qrImageData, `ID_Card_${pusId}_${pusName.replace(/[^a-z0-9]/gi, '_')}.png`);
 });
 
 document.getElementById('modalPrintBtn')?.addEventListener('click', function() {
@@ -244,8 +239,9 @@ document.getElementById('modalPrintBtn')?.addEventListener('click', function() {
     const pusName = currentClientDataForCard.pusName;
     const startDate = currentClientDataForCard.startDate;
     const endDate = currentClientDataForCard.endDate;
+    const cluster = currentClientDataForCard.cluster;
     
-    printSingleCard(pusId, pusName, startDate, endDate, qrImageData);
+    printSingleCard(pusId, pusName, startDate, endDate, cluster, qrImageData);
 });
 
 document.getElementById('modalCloseBtn')?.addEventListener('click', closeModal);
@@ -266,8 +262,8 @@ window.addEventListener('click', function(event) {
     }
 });
 
-function printSingleCard(pusId, pusName, startDate, endDate, qrImageData) {
-    const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData);
+function printSingleCard(pusId, pusName, startDate, endDate, cluster, qrImageData) {
+    const cardHTML = createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrImageData);
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`<!DOCTYPE html><html><head><title>ID Card - ${pusName}</title><style>*{margin:0;padding:0;box-sizing:border-box;} body{background:white;display:flex;justify-content:center;align-items:center;min-height:100vh;} @media print{body{margin:0;padding:0;}}</style></head><body><div style="margin:20px;">${cardHTML}</div><script>setTimeout(()=>{window.print();window.close();},200);<\/script></body></html>`);
     printWindow.document.close();
@@ -379,12 +375,12 @@ window.downloadSingleBatch = function(index) {
 
 window.downloadSingleBatchCard = async function(index) { 
     const qr = batchQRs[index]; 
-    if(qr) await downloadIDCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl, `ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`); 
+    if(qr) await downloadIDCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl, `ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`); 
 };
 
 window.printSingleBatchCard = function(index) { 
     const qr = batchQRs[index]; 
-    if(qr) printSingleCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl); 
+    if(qr) printSingleCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl); 
 };
 
 document.getElementById('massPrintCardsBtn')?.addEventListener('click', function() {
@@ -397,7 +393,7 @@ document.getElementById('massPrintCardsBtn')?.addEventListener('click', function
         let gridItems = '';
         for (let j = 0; j < pageCards.length; j++) {
             const qr = pageCards[j];
-            gridItems += `<div class="print-card-item">${createSingleIDCardHTML(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl)}</div>`;
+            gridItems += `<div class="print-card-item">${createSingleIDCardHTML(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl)}</div>`;
         }
         pagesHtml += `<div class="print-page"><div class="print-id-grid">${gridItems}</div></div>`;
     }
@@ -437,7 +433,7 @@ document.getElementById('massDownloadCardsBtn')?.addEventListener('click', async
     for (let i = 0; i < batchQRs.length; i++) {
         const qr = batchQRs[i];
         massProgressFill.style.width = `${((i+1)/batchQRs.length)*100}%`; massStatus.textContent = `Processing ${i+1}/${batchQRs.length}: ${qr.data.pusName}`;
-        const canvas = await generateIDCardCanvas(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.imageUrl);
+        const canvas = await generateIDCardCanvas(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl);
         if(canvas){ const base64Data = canvas.toDataURL('image/png').split(',')[1]; zip.file(`ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`, base64Data, { base64: true }); }
         await new Promise(r => setTimeout(r, 50));
     }
