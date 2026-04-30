@@ -25,7 +25,7 @@ async function generateQRCode(data, size = 300) {
     });
 }
 
-function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData) {
+function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData, cluster) {
     const issueDate = new Date().toLocaleDateString();
     const displayName = pusName || "N/A";
     return `
@@ -46,8 +46,8 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData)
                         <div style="font-size:9px; font-weight:600; color:#2c3e50; line-height:1.2; word-wrap:break-word;">${escapeHtml(displayName)}</div>
                     </div>
                     <div style="margin-bottom:5px;">
-                        <div style="font-size:7px; font-weight:bold; color:#555;">DOCKET NUMBER</div>
-                        <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(pusId)}</div>
+                        <div style="font-size:7px; font-weight:bold; color:#555;">CLUSTER</div>
+                        <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(cluster)}</div>
                     </div>
                     <div>
                         <div style="font-size:7px; font-weight:bold; color:#555;">SUPERVISION PERIOD</div>
@@ -62,7 +62,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData)
             </div>
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
-                <span>Valid until: ${endDate || 'N/A'}</span>
+                
                 <span>www.irigacityppo@gmail.com</span>
             </div>
         </div>
