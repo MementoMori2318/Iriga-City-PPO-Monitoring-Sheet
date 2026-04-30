@@ -3,13 +3,35 @@
 // ============================================
 
 const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
-const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbx3pFFItNjZTgFcqySwpyXDHOJagoO5T20XJ9QAXwSQFNQg4Ga_amfReLMzvfR-4OHW/exec';
+const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbziPv9mABXrFbIM1VuU9vSLlp4O9fLBxauYmzKzc8x_2yc24qUZQ8da_AsEPmjpMY1f/exec';
 
 const AUTHORIZED_EMAILS = [
     'iace2318i@gmail.com',
     'wq.rodalyn@gmail.com',
     'beta22926@gmail.com'
 ];
+
+// Helper function to format date from MM-DD-YYYY to readable format
+function formatReadableDate(dateStr) {
+    if (!dateStr || dateStr === 'N/A') return 'N/A';
+    try {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const month = parts[0];
+            const day = parts[1];
+            const year = parts[2];
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+        return dateStr;
+    } catch (e) {
+        return dateStr;
+    }
+}
 
 let savedUrl = localStorage.getItem('appsScriptUrl');
 if (savedUrl && savedUrl !== APPS_SCRIPT_URL_DEFAULT) {
@@ -187,7 +209,12 @@ async function processQR(qrData) {
         document.getElementById('displayPUSName').textContent = data.pusName || data.clientName || 'N/A';
         document.getElementById('displayGenderAge').textContent = `${data.gender || 'N/A'} / ${data.age || 'N/A'}`;
         document.getElementById('displayOffense').textContent = data.offenseCategory || 'N/A';
-        document.getElementById('displayPeriod').textContent = `${data.startDate || 'N/A'} to ${data.endDate || 'N/A'}`;
+        
+        // Format dates for readable display
+        const startDateFormatted = formatReadableDate(data.startDate);
+        const endDateFormatted = formatReadableDate(data.endDate);
+        document.getElementById('displayPeriod').textContent = `${startDateFormatted} to ${endDateFormatted}`;
+        
         document.getElementById('displayOfficer').textContent = data.supervisingOfficer || 'N/A';
         document.getElementById('displayCluster').textContent = data.cluster || 'N/A';
         
