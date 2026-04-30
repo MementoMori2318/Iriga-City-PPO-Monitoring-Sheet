@@ -9,167 +9,174 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="container">
         <div class="header no-print">
             <h1>🏢 Iriga City PPO</h1>
-            <p>QR Code Generator - ID Cards</p>
+            <p>QR Code & ID Card Generator</p>
         </div>
         
-        <!-- Single QR Code Card -->
-        <div class="card no-print">
-            <div class="info-badge">
-                ✅ <strong>Batch Import from Excel!</strong> Generate QR codes & ID cards.
-            </div>
-            <div class="import-section">
-                <h3>📊 Batch Import from Excel/Google Sheets</h3>
-                <div class="file-input">
-                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv, .xlsm">
-                    <button id="importBtn" class="btn-import">📥 Import & Generate</button>
-                    <button id="downloadTemplateBtn" class="btn-download">📄 Download Template</button>
+        <!-- Login Required Message (shown when not logged in) -->
+        <div id="loginRequired" class="card" style="text-align: center;">
+            <div class="login-section" style="margin: 0;">
+                <h2>🔐 Authentication Required</h2>
+                <p>Please log in to access the QR Code Generator</p>
+                <div id="g_id_signin_qr" class="g_id_signin" style="justify-content: center;"></div>
+                <p style="font-size: 0.75rem; margin-top: 15px;">Only authorized PPO officers can access this tool</p>
+                <div style="margin-top: 20px;">
+                    <a href="index.html" style="background: #2a5298; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">← Back to Attendance Form</a>
                 </div>
-                <a href="#" id="templateHelpLink" class="template-link">📋 View template format</a>
-                <div id="importStatus" class="status-message" style="display: none;"></div>
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <!-- Main Content (hidden until login) -->
+        <div id="mainContent" style="display: none;">
+            <div class="card">
+                <div class="info-badge">
+                    ✅ <strong>Batch Import from Excel!</strong> Generate QR codes & ID cards.
+                </div>
+                <div class="import-section">
+                    <h3>📊 Batch Import from Excel/Google Sheets</h3>
+                    <div class="file-input">
+                        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv, .xlsm">
+                        <button id="importBtn" class="btn-import">📥 Import & Generate</button>
+                        <button id="downloadTemplateBtn" class="btn-download">📄 Download Template</button>
+                    </div>
+                    <a href="#" id="templateHelpLink" class="template-link">📋 View template format</a>
+                    <div id="importStatus" class="status-message" style="display: none;"></div>
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                
+                <h2>Single QR Code Generation</h2>
+                <form id="qrForm">
+                    <div class="row">
+                        <div class="form-group">
+                            <label>PS ID (Docket Number) *</label>
+                            <input type="text" id="pusId" placeholder="e.g., PS-2024-001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="pusName" placeholder="Last Name, First Name MI" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Gender *</label>
+                            <select id="gender" required>
+                                <option value="Male">Male</option>
+                                <option value="Female" selected>Female</option>
+                                <option value="LGBTQIA+">LGBTQIA+</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Age *</label>
+                            <input type="number" id="age" placeholder="46" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Offense Category *</label>
+                            <select id="offenseCategory" required>
+                                <option value="Drug Offense">Drug Offense</option>
+                                <option value="Non-Drug Offense">Non-Drug Offense</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Supervision Period</label>
+                            <div class="row" style="gap: 10px;">
+                                <input type="text" id="startDate" placeholder="Start MM-DD-YYYY">
+                                <input type="text" id="endDate" placeholder="End MM-DD-YYYY">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Supervising Officer</label>
+                            <input type="text" id="officer" placeholder="SSPO JANET B. PAVIA">
+                        </div>
+                        <div class="form-group">
+                            <label>Cluster/Area</label>
+                            <input type="text" id="cluster" placeholder="IRIGA">
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" id="generateQrBtn">🔲 Generate QR Code</button>
+                        <button type="button" onclick="clearForm()">🗑️ Clear</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- User Info Bar -->
+            <div id="userInfoBar" class="user-info" style="display: flex; margin-bottom: 20px;">
+                <div class="user-details">
+                    <img id="userAvatar" class="user-avatar" src="" alt="Avatar">
+                    <div class="user-text">
+                        <div class="user-name" id="userNameDisplay"></div>
+                        <div class="user-email" id="userEmailDisplay"></div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="logout-btn">Sign Out</button>
+            </div>
+            
+            <div class="card" id="batchCard" style="display: none;">
+                <h3>📦 Batch Generated QR Codes</h3>
+                <div class="mass-actions">
+                    <div class="btn-group" style="justify-content: flex-start; margin-top: 0;">
+                        <button id="massDownloadQrsBtn" class="btn-mass">📦 Download All QR (ZIP)</button>
+                        <button id="massDownloadCardsBtn" class="btn-mass">🪪 Download All ID Cards (ZIP)</button>
+                        <button id="massPrintCardsBtn" class="btn-mass">🖨️ Print All (2 per page)</button>
+                    </div>
+                    <div id="massProgress" class="mass-progress">
+                        <div class="progress-bar" style="display: block;">
+                            <div class="progress-fill" id="massProgressFill"></div>
+                        </div>
+                        <div id="massStatus" class="status-message status-info" style="display: block;"></div>
+                    </div>
+                </div>
+                <div id="batchList" class="batch-list"></div>
+                <div class="btn-group">
+                    <button id="clearBatchBtn" class="btn-download">🗑️ Clear All</button>
+                </div>
+                <div id="printCardsContainer" class="print-layout"></div>
+            </div>
+            
+            <div class="card">
+                <h2>📋 Saved Persons</h2>
+                <div id="pusList" class="batch-list">
+                    <p>No records yet. Generate QR codes to add persons.</p>
+                </div>
+                <div class="btn-group">
+                    <button onclick="exportAllPUS()" class="btn-batch">📤 Export All Data</button>
+                    <button onclick="clearAllPUS()" class="btn-download">🗑️ Clear All</button>
                 </div>
             </div>
             
-            <h2>Single QR Code Generation</h2>
-            <form id="qrForm">
-                <div class="row">
-                    <div class="form-group">
-                        <label>PS ID (Docket Number) *</label>
-                        <input type="text" id="pusId" placeholder="e.g., PS-2024-001" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Full Name *</label>
-                        <input type="text" id="pusName" placeholder="Last Name, First Name MI" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="form-group">
-                        <label>Gender *</label>
-                        <select id="gender" required>
-                            <option value="Male">Male</option>
-                            <option value="Female" selected>Female</option>
-                            <option value="LGBTQIA+">LGBTQIA+</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Age *</label>
-                        <input type="number" id="age" placeholder="46" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="form-group">
-                        <label>Offense Category *</label>
-                        <select id="offenseCategory" required>
-                            <option value="Drug Offense">Drug Offense</option>
-                            <option value="Non-Drug Offense">Non-Drug Offense</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Supervision Period</label>
-                        <div class="row" style="gap: 10px;">
-                            <input type="text" id="startDate" placeholder="Start MM-DD-YYYY">
-                            <input type="text" id="endDate" placeholder="End MM-DD-YYYY">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="form-group">
-                        <label>Supervising Officer</label>
-                        <input type="text" id="officer" placeholder="SSPO JANET B. PAVIA">
-                    </div>
-                    <div class="form-group">
-                        <label>Cluster/Area</label>
-                        <input type="text" id="cluster" placeholder="IRIGA">
-                    </div>
-                </div>
-                <div class="btn-group">
-                    <button type="submit" id="generateQrBtn">🔲 Generate QR Code</button>
-                    <button type="button" onclick="clearForm()">🗑️ Clear</button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Batch Generated QR Codes - COMPACT -->
-        <div class="card" id="batchCard" style="display: none;">
-            <h3 class="no-print">📦 Batch Generated QR Codes</h3>
-            <div class="mass-actions no-print">
-                <div class="btn-group" style="justify-content: flex-start; margin-top: 0;">
-                    <button id="massDownloadQrsBtn" class="btn-mass">📦 Download All QR (ZIP)</button>
-                    <button id="massDownloadCardsBtn" class="btn-mass">🪪 Download All ID Cards (ZIP)</button>
-                    <button id="massPrintCardsBtn" class="btn-mass">🖨️ Print All (2 per page)</button>
-                </div>
-                <div id="massProgress" class="mass-progress">
-                    <div class="progress-bar" style="display: block;">
-                        <div class="progress-fill" id="massProgressFill"></div>
-                    </div>
-                    <div id="massStatus" class="status-message status-info" style="display: block;"></div>
-                </div>
+            <div class="nav-link">
+                <a href="index.html">📱 Go to Attendance Scanner</a>
             </div>
-            <div id="batchList" class="batch-list no-print"></div>
-            <div class="btn-group no-print">
-                <button id="clearBatchBtn" class="btn-download">🗑️ Clear All</button>
-            </div>
-            <div id="printCardsContainer" class="print-layout"></div>
-        </div>
-        
-        <!-- Saved Persons List - COMPACT -->
-        <div class="card no-print">
-            <h2>📋 Saved Persons</h2>
-            <div id="pusList" class="batch-list">
-                <p>No records yet. Generate QR codes to add persons.</p>
-            </div>
-            <div class="btn-group">
-                <button onclick="exportAllPUS()" class="btn-batch">📤 Export All Data</button>
-                <button onclick="clearAllPUS()" class="btn-download">🗑️ Clear All</button>
-            </div>
-        </div>
-        
-        <!-- Navigation -->
-        <div class="nav-link no-print">
-            <a href="index.html">📱 Go to Attendance Scanner</a>
         </div>
     </div>
     
-        <!-- MODAL POPUP FOR QR CODE - WITH ALL CLIENT INFO -->
-        <div id="qrModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>📱 QR Code Generated</h2>
-                    <span class="modal-close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div id="modalQrcode" class="modal-qrcode"></div>
-                    <div id="modalClientInfo" class="modal-client-info">
-                        <!-- All client info will be populated here -->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="modalDownloadQrBtn" class="btn-import">📥 Download QR</button>
-                    <button id="modalDownloadCardBtn" class="btn-download">🪪 ID Card</button>
-                    <button id="modalPrintBtn" class="btn-batch">🖨️ Print</button>
-                    <button id="modalCloseBtn" class="btn-mass">Close</button>
-                </div>
-            </div>
-        </div>
-    
-    <!-- HIDDEN MODAL FOR ID CARD PREVIEW -->
-    <div id="idCardModal" class="modal">
-        <div class="modal-content" style="width: 380px;">
+    <!-- MODAL POPUP FOR QR CODE -->
+    <div id="qrModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2>🪪 ID Card Preview</h2>
-                <span class="modal-close-idcard">&times;</span>
+                <h2>📱 QR Code Generated</h2>
+                <span class="modal-close">&times;</span>
             </div>
-            <div class="modal-body" id="idCardPreviewBody"></div>
+            <div class="modal-body">
+                <div id="modalQrcode" class="modal-qrcode"></div>
+                <div id="modalClientInfo" class="modal-client-info"></div>
+            </div>
             <div class="modal-footer">
-                <button id="modalDownloadCardOnlyBtn" class="btn-import">📥 Download</button>
-                <button id="modalPrintCardOnlyBtn" class="btn-batch">🖨️ Print</button>
-                <button id="modalCloseIdCardBtn" class="btn-mass">Close</button>
+                <button id="modalDownloadQrBtn" class="btn-import">📥 Download QR</button>
+                <button id="modalDownloadCardBtn" class="btn-download">🪪 ID Card</button>
+                <button id="modalPrintBtn" class="btn-batch">🖨️ Print</button>
+                <button id="modalCloseBtn" class="btn-mass">Close</button>
             </div>
         </div>
     </div>

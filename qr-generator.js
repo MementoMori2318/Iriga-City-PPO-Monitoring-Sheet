@@ -1,13 +1,124 @@
 // ============================================
 // IRIGA PPO - QR CODE & ID CARD GENERATOR
+// WITH LOGIN REQUIREMENT
 // ============================================
 
 let currentQRData = null;
 let currentQRCanvas = null;
 let batchQRs = [];
 let currentClientDataForCard = null;
+let currentUser = null;
+
+const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
+const AUTHORIZED_EMAILS = [
+    'iace2318i@gmail.com',
+    'wq.rodalyn@gmail.com',
+    'beta22926@gmail.com'
+];
 
 const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Start Date', 'End Date', 'Supervising Officer', 'Cluster'];
+
+// ============================================
+// LOGIN FUNCTIONS
+// ============================================
+
+function initGoogleSignIn() {
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false
+    });
+    
+    google.accounts.id.renderButton(
+        document.getElementById('g_id_signin_qr'),
+        { 
+            type: 'standard', 
+            theme: 'outline', 
+            size: 'large', 
+            text: 'signin_with',
+            shape: 'rectangular',
+            width: 280
+        }
+    );
+}
+
+function handleCredentialResponse(response) {
+    try {
+        const payload = JSON.parse(atob(response.credential.split('.')[1]));
+        const userEmail = payload.email;
+        
+        if (AUTHORIZED_EMAILS.includes(userEmail)) {
+            currentUser = {
+                email: userEmail,
+                name: payload.name,
+                picture: payload.picture
+            };
+            
+            // Show main content, hide login screen
+            document.getElementById('loginRequired').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            
+            // Update user info bar
+            document.getElementById('userNameDisplay').textContent = currentUser.name || currentUser.email;
+            document.getElementById('userEmailDisplay').textContent = currentUser.email;
+            if (currentUser.picture) document.getElementById('userAvatar').src = currentUser.picture;
+            
+            // Save session
+            localStorage.setItem('qr_loggedInUser', JSON.stringify(currentUser));
+            
+            showStatusMessage(`Welcome, ${currentUser.name || currentUser.email}!`, 'success');
+        } else {
+            showStatusMessage('Unauthorized: Your email is not registered.', 'error');
+            google.accounts.id.disableAutoSelect();
+        }
+    } catch (e) {
+        showStatusMessage('Login failed. Please try again.', 'error');
+    }
+}
+
+function checkSession() {
+    const saved = localStorage.getItem('qr_loggedInUser');
+    if (saved) {
+        const user = JSON.parse(saved);
+        if (AUTHORIZED_EMAILS.includes(user.email)) {
+            currentUser = user;
+            document.getElementById('loginRequired').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('userNameDisplay').textContent = user.name || user.email;
+            document.getElementById('userEmailDisplay').textContent = user.email;
+            if (user.picture) document.getElementById('userAvatar').src = user.picture;
+            return true;
+        } else {
+            localStorage.removeItem('qr_loggedInUser');
+        }
+    }
+    return false;
+}
+
+function logout() {
+    google.accounts.id.disableAutoSelect();
+    localStorage.removeItem('qr_loggedInUser');
+    currentUser = null;
+    document.getElementById('loginRequired').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+    showStatusMessage('You have been signed out.', 'info');
+}
+
+function showStatusMessage(msg, type) {
+    const statusDiv = document.getElementById('importStatus');
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.className = `status-message status-${type}`;
+        statusDiv.textContent = msg;
+        setTimeout(() => {
+            if (statusDiv.textContent === msg) statusDiv.style.display = 'none';
+        }, 3000);
+    }
+}
+
+// ============================================
+// QR CODE GENERATION FUNCTIONS
+// ============================================
 
 async function generateQRCode(data, size = 300) {
     return new Promise((resolve, reject) => {
@@ -59,13 +170,13 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
                     <div style="width:68px; height:78px; border:1.5px solid #ccc; border-radius:8px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; margin:0 auto;">
                         <div style="text-align:center; color:#aaa; font-size:10px;">📷<br><span style="font-size:6px;">Photo</span></div>
                     </div>
-                    
+                    <div style="font-size:6px; color:#999; margin-top:2px;">2x2 Photo</div>
                     <div style="font-size:5px; color:#aaa; text-align:center; margin-top:1px;">(Paste/glue photo)</div>
                 </div>
             </div>
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
-                
+               
                 <span>www.irigacityppo@gmail.com</span>
             </div>
         </div>
@@ -130,28 +241,20 @@ function showQRModal(qrCanvas, clientData) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;">
             <div><strong>📋 PS ID:</strong></div>
             <div>${escapeHtml(clientData.pusId)}</div>
-            
             <div><strong>👤 Full Name:</strong></div>
             <div>${escapeHtml(clientData.pusName)}</div>
-            
             <div><strong>⚥ Gender:</strong></div>
             <div>${clientData.gender}</div>
-            
             <div><strong>🎂 Age:</strong></div>
             <div>${clientData.age}</div>
-            
-            <div><strong>⚖️ Offense Category:</strong></div>
+            <div><strong>⚖️ Offense:</strong></div>
             <div>${clientData.offenseCategory}</div>
-            
             <div><strong>📅 Start Date:</strong></div>
             <div>${clientData.startDate || 'N/A'}</div>
-            
             <div><strong>📅 End Date:</strong></div>
             <div>${clientData.endDate || 'N/A'}</div>
-            
-            <div><strong>👮 Supervising Officer:</strong></div>
+            <div><strong>👮 Officer:</strong></div>
             <div>${escapeHtml(clientData.supervisingOfficer || 'N/A')}</div>
-            
             <div><strong>📍 Cluster:</strong></div>
             <div>${escapeHtml(clientData.cluster || 'N/A')}</div>
         </div>
@@ -168,13 +271,11 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-function closeIdCardModal() {
-    const modal = document.getElementById('idCardModal');
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-}
+// ============================================
+// EVENT LISTENERS
+// ============================================
 
-document.getElementById('qrForm').addEventListener('submit', async function(e) {
+document.getElementById('qrForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const pusId = document.getElementById('pusId').value.trim();
@@ -246,18 +347,11 @@ document.getElementById('modalPrintBtn')?.addEventListener('click', function() {
 
 document.getElementById('modalCloseBtn')?.addEventListener('click', closeModal);
 document.querySelector('.modal-close')?.addEventListener('click', closeModal);
-document.querySelector('.modal-close-idcard')?.addEventListener('click', closeIdCardModal);
-document.getElementById('modalCloseIdCardBtn')?.addEventListener('click', closeIdCardModal);
 
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('qrModal');
-    const idCardModal = document.getElementById('idCardModal');
     if (event.target === modal) {
         closeModal();
-        document.body.style.overflow = '';
-    }
-    if (event.target === idCardModal) {
-        closeIdCardModal();
         document.body.style.overflow = '';
     }
 });
@@ -513,6 +607,21 @@ document.getElementById('templateHelpLink')?.addEventListener('click',(e)=>{
     e.preventDefault(); 
     alert("📋 Required headers: PS ID, Full Name, Gender, Age, Offense Category, Start Date, End Date, Supervising Officer, Cluster"); 
 });
+
+// Logout button
+document.getElementById('logoutBtn')?.addEventListener('click', function() {
+    logout();
+});
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+// Check for existing session first
+if (!checkSession()) {
+    // Show login screen and initialize Google Sign-In
+    initGoogleSignIn();
+}
 
 const saved = JSON.parse(localStorage.getItem('iriga_ppo_pus')||'[]');
 displayPUSList(saved);
