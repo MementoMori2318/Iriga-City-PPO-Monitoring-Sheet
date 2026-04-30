@@ -47,7 +47,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, qrImageData,
                     </div>
                     <div style="margin-bottom:5px;">
                         <div style="font-size:7px; font-weight:bold; color:#555;">CLUSTER</div>
-                        <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(cluster)}</div>
+                        <div style="font-size:9px; font-weight:600; color:#2c3e50;">${escapeHtml(clientData.cluster)}</div>
                     </div>
                     <div>
                         <div style="font-size:7px; font-weight:bold; color:#555;">SUPERVISION PERIOD</div>
