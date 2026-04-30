@@ -59,7 +59,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
                     <div style="width:68px; height:78px; border:1.5px solid #ccc; border-radius:8px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; margin:0 auto;">
                         <div style="text-align:center; color:#aaa; font-size:10px;">📷<br><span style="font-size:6px;">Photo</span></div>
                     </div>
-                    <div style="font-size:6px; color:#999; margin-top:2px;">2x2 Photo</div>
+                    
                     <div style="font-size:5px; color:#aaa; text-align:center; margin-top:1px;">(Paste/glue photo)</div>
                 </div>
             </div>
