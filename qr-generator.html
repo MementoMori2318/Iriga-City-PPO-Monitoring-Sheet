@@ -9,45 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <style>
-        /* Additional style for collapsible section */
-        .collapsible-section {
-            margin-top: 20px;
-        }
-        .collapsible-header {
-            background: #f8f9fa;
-            padding: 12px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid #e0e0e0;
-            transition: all 0.2s;
-        }
-        .collapsible-header:hover {
-            background: #e9ecef;
-        }
-        .collapsible-header h3 {
-            margin: 0;
-            font-size: 1rem;
-            color: #2c3e50;
-        }
-        .collapsible-icon {
-            font-size: 1.2rem;
-            transition: transform 0.2s;
-        }
-        .collapsible-icon.open {
-            transform: rotate(180deg);
-        }
-        .collapsible-content {
-            display: none;
-            margin-top: 10px;
-        }
-        .collapsible-content.show {
-            display: block;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -158,28 +119,6 @@
                 </form>
             </div>
             
-            <div class="card" id="batchCard" style="display: none;">
-                <h3>📦 Batch Generated QR Codes</h3>
-                <div class="mass-actions">
-                    <div class="btn-group" style="justify-content: flex-start; margin-top: 0;">
-                        <button id="massDownloadQrsBtn" class="btn-mass">📦 Download All QR (ZIP)</button>
-                        <button id="massDownloadCardsBtn" class="btn-mass">🪪 Download All ID Cards (ZIP)</button>
-                        <button id="massPrintCardsBtn" class="btn-mass">🖨️ Print All (2 per page)</button>
-                    </div>
-                    <div id="massProgress" class="mass-progress">
-                        <div class="progress-bar" style="display: block;">
-                            <div class="progress-fill" id="massProgressFill"></div>
-                        </div>
-                        <div id="massStatus" class="status-message status-info" style="display: block;"></div>
-                    </div>
-                </div>
-                <div id="batchList" class="batch-list"></div>
-                <div class="btn-group">
-                    <button id="clearBatchBtn" class="btn-download">🗑️ Clear All</button>
-                </div>
-                <div id="printCardsContainer" class="print-layout"></div>
-            </div>
-            
             <!-- COLLAPSIBLE SAVED PERSONS SECTION -->
             <div class="card collapsible-section">
                 <div class="collapsible-header" id="savedPersonsHeader">
@@ -203,7 +142,37 @@
         </div>
     </div>
     
-    <!-- MODAL POPUP FOR QR CODE -->
+    <!-- BATCH MODAL POPUP -->
+    <div id="batchModal" class="batch-modal">
+        <div class="batch-modal-content">
+            <div class="batch-modal-header">
+                <h3>📦 Batch Generated QR Codes</h3>
+                <span class="batch-modal-close" id="batchModalClose">&times;</span>
+            </div>
+            <div class="batch-modal-body">
+                <div class="mass-actions" style="margin-bottom: 15px;">
+                    <div class="btn-group" style="justify-content: flex-start; margin-top: 0;">
+                        <button id="massDownloadQrsBtnModal" class="btn-mass">📦 Download All QR (ZIP)</button>
+                        <button id="massDownloadCardsBtnModal" class="btn-mass">🪪 Download All ID Cards (ZIP)</button>
+                        <button id="massPrintCardsBtnModal" class="btn-mass">🖨️ Print All (2 per page)</button>
+                    </div>
+                    <div id="massProgressModal" class="mass-progress">
+                        <div class="progress-bar" style="display: block;">
+                            <div class="progress-fill" id="massProgressFillModal"></div>
+                        </div>
+                        <div id="massStatusModal" class="status-message status-info" style="display: block;"></div>
+                    </div>
+                </div>
+                <div id="batchListModal" class="batch-list-modal"></div>
+            </div>
+            <div class="batch-modal-footer">
+                <button id="clearBatchBtnModal" class="btn-download">🗑️ Clear All</button>
+                <button id="closeBatchModalBtn" class="btn-mass">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL POPUP FOR SINGLE QR CODE -->
     <div id="qrModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -237,6 +206,34 @@
             savedPersonsContent.classList.toggle('show');
             collapsibleIcon.classList.toggle('open');
         });
+        
+        // Batch Modal functionality
+        const batchModal = document.getElementById('batchModal');
+        const batchModalClose = document.getElementById('batchModalClose');
+        const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
+        
+        function openBatchModal() {
+            batchModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeBatchModal() {
+            batchModal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        batchModalClose.addEventListener('click', closeBatchModal);
+        closeBatchModalBtn.addEventListener('click', closeBatchModal);
+        
+        window.addEventListener('click', function(event) {
+            if (event.target === batchModal) {
+                closeBatchModal();
+            }
+        });
+        
+        // Expose functions for qr-generator.js
+        window.openBatchModal = openBatchModal;
+        window.closeBatchModal = closeBatchModal;
     </script>
 </body>
 </html>

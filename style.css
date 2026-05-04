@@ -786,6 +786,170 @@ button:disabled {
 }
 
 /* ============================================
+   BATCH MODAL STYLES
+   ============================================ */
+
+.batch-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    animation: fadeIn 0.3s ease;
+}
+
+.batch-modal-content {
+    background-color: white;
+    margin: 3% auto;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.batch-modal-header {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.batch-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.batch-modal-close {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.batch-modal-close:hover {
+    color: #ff9800;
+    transform: scale(1.1);
+}
+
+.batch-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.batch-list-modal {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.batch-item-modal {
+    background: #f8f9fa;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 3px solid #2a5298;
+}
+
+.batch-info-modal {
+    flex: 1;
+}
+
+.batch-name-modal {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.85rem;
+}
+
+.batch-details-modal {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    margin-top: 3px;
+}
+
+.batch-actions-modal {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.batch-actions-modal button {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
+.batch-modal-footer {
+    padding: 15px 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-top: 1px solid #eee;
+    background: #f8f9fa;
+}
+
+/* ============================================
+   COLLAPSIBLE SECTION
+   ============================================ */
+
+.collapsible-section {
+    margin-top: 20px;
+}
+
+.collapsible-header {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s;
+}
+
+.collapsible-header:hover {
+    background: #e9ecef;
+}
+
+.collapsible-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.collapsible-icon {
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+}
+
+.collapsible-icon.open {
+    transform: rotate(180deg);
+}
+
+.collapsible-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.collapsible-content.show {
+    display: block;
+}
+
+/* ============================================
    ADMIN LINK
    ============================================ */
 
@@ -972,6 +1136,11 @@ button:disabled {
         width: 140px !important;
         height: 140px !important;
     }
+    .batch-modal-content {
+        width: 95%;
+        margin: 5% auto;
+        max-height: 85vh;
+    }
 }
 
 @media (max-width: 550px) {
@@ -1009,6 +1178,14 @@ button:disabled {
     .modal-footer button {
         font-size: 9px;
         padding: 5px 8px;
+    }
+    .batch-item-modal {
+        flex-direction: column;
+        text-align: center;
+    }
+    .batch-actions-modal {
+        margin-top: 8px;
+        justify-content: center;
     }
 }
 

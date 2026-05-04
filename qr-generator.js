@@ -27,10 +27,8 @@ function checkSession() {
         const user = JSON.parse(saved);
         if (AUTHORIZED_EMAILS.includes(user.email)) {
             currentUser = user;
-            // Show main content, hide expired message
             document.getElementById('sessionExpired').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            // Update user info bar
             document.getElementById('userNameDisplay').textContent = user.name || user.email;
             document.getElementById('userEmailDisplay').textContent = user.email;
             if (user.picture) document.getElementById('userAvatar').src = user.picture;
@@ -39,7 +37,6 @@ function checkSession() {
             localStorage.removeItem('loggedInUser');
         }
     }
-    // No valid session - show expired message
     document.getElementById('sessionExpired').style.display = 'block';
     document.getElementById('mainContent').style.display = 'none';
     return false;
@@ -104,13 +101,12 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
                     <div style="width:68px; height:78px; border:1.5px solid #ccc; border-radius:8px; background:#f9f9f9; display:flex; align-items:center; justify-content:center; margin:0 auto;">
                         <div style="text-align:center; color:#aaa; font-size:10px;">📷<br><span style="font-size:6px;">Photo</span></div>
                     </div>
-                    
                     <div style="font-size:5px; color:#aaa; text-align:center; margin-top:1px;">(Paste/glue photo)</div>
                 </div>
             </div>
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
-                
+                <span>Valid until: ${endDate || 'N/A'}</span>
                 <span>www.irigacityppo@gmail.com</span>
             </div>
         </div>
@@ -378,7 +374,11 @@ document.getElementById('importBtn')?.addEventListener('click', async function()
         statusDiv.className = 'status-message status-success';
         statusDiv.innerHTML = `✅ Successfully generated ${batchQRs.length} QR codes!`;
         displayBatchResults(batchQRs);
-        document.getElementById('batchCard').style.display = 'block';
+        
+        // Open the batch modal instead of showing the card
+        if (typeof openBatchModal === 'function') {
+            openBatchModal();
+        }
     } catch (error) {
         statusDiv.className = 'status-message status-error'; 
         statusDiv.textContent = 'Error: '+error.message; 
@@ -387,8 +387,20 @@ document.getElementById('importBtn')?.addEventListener('click', async function()
 });
 
 function displayBatchResults(qrs) {
-    const batchList = document.getElementById('batchList');
-    batchList.innerHTML = qrs.map((qr, index) => `<div class="batch-item"><div class="batch-info"><div class="batch-name">${escapeHtml(qr.data.pusName)}</div><div class="batch-details">ID: ${escapeHtml(qr.data.pusId)} | ${qr.data.offenseCategory}</div></div><div class="batch-actions"><button class="btn-small" onclick="downloadSingleBatch(${index})">📥 QR</button><button class="btn-small" onclick="downloadSingleBatchCard(${index})">🪪 Card</button><button class="btn-small" onclick="printSingleBatchCard(${index})">🖨️ Print</button></div></div>`).join('');
+    const batchList = document.getElementById('batchListModal');
+    batchList.innerHTML = qrs.map((qr, index) => `
+        <div class="batch-item-modal">
+            <div class="batch-info-modal">
+                <div class="batch-name-modal">${escapeHtml(qr.data.pusName)}</div>
+                <div class="batch-details-modal">ID: ${escapeHtml(qr.data.pusId)} | ${qr.data.offenseCategory}</div>
+            </div>
+            <div class="batch-actions-modal">
+                <button class="btn-small" onclick="downloadSingleBatch(${index})">📥 QR</button>
+                <button class="btn-small" onclick="downloadSingleBatchCard(${index})">🪪 Card</button>
+                <button class="btn-small" onclick="printSingleBatchCard(${index})">🖨️ Print</button>
+            </div>
+        </div>
+    `).join('');
 }
 
 window.downloadSingleBatch = function(index) { 
@@ -411,7 +423,31 @@ window.printSingleBatchCard = function(index) {
     if(qr) printSingleCard(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl); 
 };
 
-document.getElementById('massPrintCardsBtn')?.addEventListener('click', function() {
+// Modal version of mass download buttons
+document.getElementById('massDownloadQrsBtnModal')?.addEventListener('click', async function() {
+    if(batchQRs.length===0){ alert('No QR codes'); return; }
+    const zip = new JSZip();
+    for(let qr of batchQRs){ const base64 = qr.imageUrl.split(',')[1]; const safeName = qr.data.pusName.replace(/[^a-z0-9]/gi, '_'); zip.file(`QR_${qr.data.pusId}_${safeName}.png`, base64, { base64: true }); }
+    const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `All_QR_Codes_${Date.now()}.zip`; link.click(); URL.revokeObjectURL(link.href);
+});
+
+document.getElementById('massDownloadCardsBtnModal')?.addEventListener('click', async function() {
+    if (batchQRs.length === 0) { alert('No batch QR codes'); return; }
+    const massProgress = document.getElementById('massProgressModal'); const massProgressFill = document.getElementById('massProgressFillModal'); const massStatus = document.getElementById('massStatusModal');
+    massProgress.style.display = 'block'; massStatus.textContent = `Generating ${batchQRs.length} ID cards...`; massProgressFill.style.width = '0%';
+    const zip = new JSZip();
+    for (let i = 0; i < batchQRs.length; i++) {
+        const qr = batchQRs[i];
+        massProgressFill.style.width = `${((i+1)/batchQRs.length)*100}%`; massStatus.textContent = `Processing ${i+1}/${batchQRs.length}: ${qr.data.pusName}`;
+        const canvas = await generateIDCardCanvas(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl);
+        if(canvas){ const base64Data = canvas.toDataURL('image/png').split(',')[1]; zip.file(`ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`, base64Data, { base64: true }); }
+        await new Promise(r => setTimeout(r, 50));
+    }
+    const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `All_ID_Cards_${Date.now()}.zip`; link.click(); URL.revokeObjectURL(link.href);
+    massStatus.textContent = '✅ All cards ready!'; setTimeout(()=>{ massProgress.style.display='none'; }, 2000);
+});
+
+document.getElementById('massPrintCardsBtnModal')?.addEventListener('click', function() {
     if (batchQRs.length === 0) { alert('No batch QR codes to print'); return; }
     
     const cardsPerPage = 6;
@@ -446,34 +482,13 @@ document.getElementById('massPrintCardsBtn')?.addEventListener('click', function
     setTimeout(() => { printWindow.print(); }, 300);
 });
 
-document.getElementById('massDownloadQrsBtn')?.addEventListener('click', async function() {
-    if(batchQRs.length===0){ alert('No QR codes'); return; }
-    const zip = new JSZip();
-    for(let qr of batchQRs){ const base64 = qr.imageUrl.split(',')[1]; const safeName = qr.data.pusName.replace(/[^a-z0-9]/gi, '_'); zip.file(`QR_${qr.data.pusId}_${safeName}.png`, base64, { base64: true }); }
-    const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `All_QR_Codes_${Date.now()}.zip`; link.click(); URL.revokeObjectURL(link.href);
-});
-
-document.getElementById('massDownloadCardsBtn')?.addEventListener('click', async function() {
-    if (batchQRs.length === 0) { alert('No batch QR codes'); return; }
-    const massProgress = document.getElementById('massProgress'); const massProgressFill = document.getElementById('massProgressFill'); const massStatus = document.getElementById('massStatus');
-    massProgress.style.display = 'block'; massStatus.textContent = `Generating ${batchQRs.length} ID cards...`; massProgressFill.style.width = '0%';
-    const zip = new JSZip();
-    for (let i = 0; i < batchQRs.length; i++) {
-        const qr = batchQRs[i];
-        massProgressFill.style.width = `${((i+1)/batchQRs.length)*100}%`; massStatus.textContent = `Processing ${i+1}/${batchQRs.length}: ${qr.data.pusName}`;
-        const canvas = await generateIDCardCanvas(qr.data.pusId, qr.data.pusName, qr.data.startDate, qr.data.endDate, qr.data.cluster, qr.imageUrl);
-        if(canvas){ const base64Data = canvas.toDataURL('image/png').split(',')[1]; zip.file(`ID_Card_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`, base64Data, { base64: true }); }
-        await new Promise(r => setTimeout(r, 50));
-    }
-    const blob = await zip.generateAsync({ type: 'blob' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `All_ID_Cards_${Date.now()}.zip`; link.click(); URL.revokeObjectURL(link.href);
-    massStatus.textContent = '✅ All cards ready!'; setTimeout(()=>{ massProgress.style.display='none'; }, 2000);
-});
-
-document.getElementById('clearBatchBtn')?.addEventListener('click', function() { 
-    if(confirm('Clear batch?')){ 
+document.getElementById('clearBatchBtnModal')?.addEventListener('click', function() { 
+    if(confirm('Clear all batch generated QR codes?')){ 
         batchQRs = []; 
-        document.getElementById('batchCard').style.display = 'none'; 
-        document.getElementById('importStatus').style.display = 'none'; 
+        document.getElementById('batchListModal').innerHTML = '';
+        if (typeof closeBatchModal === 'function') {
+            closeBatchModal();
+        }
     } 
 });
 
@@ -551,7 +566,6 @@ document.getElementById('logoutBtn')?.addEventListener('click', function() {
 // INITIALIZATION - CHECK SESSION ONLY
 // ============================================
 
-// Check if user is logged in (session from index.html)
 checkSession();
 
 const saved = JSON.parse(localStorage.getItem('iriga_ppo_pus')||'[]');
