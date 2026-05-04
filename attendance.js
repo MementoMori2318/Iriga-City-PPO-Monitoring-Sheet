@@ -3,7 +3,7 @@
 // ============================================
 
 const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
-const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbx3pFFItNjZTgFcqySwpyXDHOJagoO5T20XJ9QAXwSQFNQg4Ga_amfReLMzvfR-4OHW/exec';
+const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwz-T51iqm7cZWmaZs8lxyCYluUbWKZR0S8OeMeEyVmQrfvMr8su46rcTz64ZV_WT0L/exec';
 
 const AUTHORIZED_EMAILS = [
     'iace2318i@gmail.com',
