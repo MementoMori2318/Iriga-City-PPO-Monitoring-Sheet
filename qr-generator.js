@@ -74,7 +74,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
     return `
         <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column;">
             <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:6px 0; text-align:center; flex-shrink:0;">
-                <h3 style="font-size:10px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PROBATION AND PAROLE OFFICE</h3>
+                <h3 style="font-size:10px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PAROLE AND PROBATION   OFFICE</h3>
                 <p style="font-size:7px; opacity:0.8;">Republic of the Philippines</p>
             </div>
             <div style="display:flex; padding:10px 12px; gap:12px; flex:1; align-items:center;">
@@ -83,7 +83,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
                     <div style="font-size:6px; color:#666; margin-top:2px;">Scan for Attendance</div>
                 </div>
                 <div style="flex:1; min-width:0;">
-                    <div style="font-weight:bold; font-size:9px; color:#1e3c72; border-bottom:1px solid #ddd; margin-bottom:6px; padding-bottom:2px;">Person Under Supervision</div>
+                    <div style="font-weight:bold; font-size:9px; color:#1e3c72; border-bottom:1px solid #ddd; margin-bottom:6px; padding-bottom:2px;">PAROLEE</div>
                     <div style="margin-bottom:5px;">
                         <div style="font-size:7px; font-weight:bold; color:#555;">NAME</div>
                         <div style="font-size:9px; font-weight:600; color:#2c3e50; line-height:1.2; word-wrap:break-word;">${escapeHtml(displayName)}</div>
