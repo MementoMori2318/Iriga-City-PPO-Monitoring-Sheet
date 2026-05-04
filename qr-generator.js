@@ -15,7 +15,7 @@ const AUTHORIZED_EMAILS = [
     'beta22926@gmail.com'
 ];
 
-const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Start Date', 'End Date', 'Supervising Officer', 'Cluster'];
+const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Criminal Case Number', 'Start Date', 'End Date', 'Address', 'Supervising Officer', 'Cluster'];
 
 // ============================================
 // SESSION CHECK - SHARED WITH INDEX.HTML
@@ -74,8 +74,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
     return `
         <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column;">
             <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:6px 0; text-align:center; flex-shrink:0;">
-                <h3 style="font-size:10px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PAROLE AND PROBATION   OFFICE</h3>
-                
+                <h3 style="font-size:10px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PAROLE AND PROBATION OFFICE</h3>
             </div>
             <div style="display:flex; padding:10px 12px; gap:12px; flex:1; align-items:center;">
                 <div style="width:100px; text-align:center; flex-shrink:0;">
@@ -179,10 +178,14 @@ function showQRModal(qrCanvas, clientData) {
             <div>${clientData.age}</div>
             <div><strong>⚖️ Offense:</strong></div>
             <div>${clientData.offenseCategory}</div>
+            <div><strong>⚖️ Case No.:</strong></div>
+            <div>${escapeHtml(clientData.caseNumber || 'N/A')}</div>
             <div><strong>📅 Start Date:</strong></div>
             <div>${clientData.startDate || 'N/A'}</div>
             <div><strong>📅 End Date:</strong></div>
             <div>${clientData.endDate || 'N/A'}</div>
+            <div><strong>🏠 Address:</strong></div>
+            <div>${escapeHtml(clientData.address || 'N/A')}</div>
             <div><strong>👮 Officer:</strong></div>
             <div>${escapeHtml(clientData.supervisingOfficer || 'N/A')}</div>
             <div><strong>📍 Cluster:</strong></div>
@@ -222,9 +225,11 @@ document.getElementById('qrForm')?.addEventListener('submit', async function(e) 
         pusName, 
         gender: document.getElementById('gender').value, 
         age: parseInt(age), 
-        offenseCategory: document.getElementById('offenseCategory').value, 
+        offenseCategory: document.getElementById('offenseCategory').value,
+        caseNumber: document.getElementById('caseNumber').value,
         startDate: document.getElementById('startDate').value, 
-        endDate: document.getElementById('endDate').value, 
+        endDate: document.getElementById('endDate').value,
+        address: document.getElementById('address').value,
         supervisingOfficer: document.getElementById('officer').value, 
         cluster: document.getElementById('cluster').value 
     };
@@ -295,8 +300,8 @@ function printSingleCard(pusId, pusName, startDate, endDate, cluster, qrImageDat
 
 document.getElementById('downloadTemplateBtn')?.addEventListener('click', function() {
     const templateData = [TEMPLATE_HEADERS, 
-        ['PS-2024-001', 'Dela Cruz, Juan A.', 'Male', '35', 'Drug Offense', '08-15-2023', '08-15-2026', 'SSPO JANET B. PAVIA', 'IRIGA'], 
-        ['PS-2024-002', 'Reyes, Maria S.', 'Female', '42', 'Non-Drug Offense', '09-01-2023', '09-01-2026', 'SSPO JANET B. PAVIA', 'NABUA']
+        ['PS-2024-001', 'Dela Cruz, Juan A.', 'Male', '35', 'Drug Offense', 'RTC-2024-00123', '08-15-2023', '08-15-2026', '123 Purok 1, Brgy. San Juan, Iriga City', 'SSPO JANET B. PAVIA', 'IRIGA'], 
+        ['PS-2024-002', 'Reyes, Maria S.', 'Female', '42', 'Non-Drug Offense', 'RTC-2024-00456', '09-01-2023', '09-01-2026', '456 Mabini St., Iriga City', 'SSPO JANET B. PAVIA', 'NABUA']
     ];
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     const wb = XLSX.utils.book_new(); 
@@ -356,8 +361,10 @@ document.getElementById('importBtn')?.addEventListener('click', async function()
                 gender: row['Gender'] || row['gender'] || 'Female',
                 age: parseInt(row['Age'] || row['age'] || 0),
                 offenseCategory: row['Offense Category'] || row['offenseCategory'] || 'Drug Offense',
+                caseNumber: row['Criminal Case Number'] || row['caseNumber'] || '',
                 startDate: row['Start Date'] || row['startDate'] || '',
                 endDate: row['End Date'] || row['endDate'] || '',
+                address: row['Address'] || row['address'] || '',
                 supervisingOfficer: row['Supervising Officer'] || row['supervisingOfficer'] || '',
                 cluster: row['Cluster'] || row['cluster'] || ''
             };
@@ -518,8 +525,10 @@ window.loadPUS = function(pusId) {
         document.getElementById('gender').value=record.gender; 
         document.getElementById('age').value=record.age; 
         document.getElementById('offenseCategory').value=record.offenseCategory; 
+        document.getElementById('caseNumber').value=record.caseNumber || '';
         document.getElementById('startDate').value=record.startDate||''; 
         document.getElementById('endDate').value=record.endDate||''; 
+        document.getElementById('address').value=record.address || '';
         document.getElementById('officer').value=record.supervisingOfficer||''; 
         document.getElementById('cluster').value=record.cluster||''; 
         document.getElementById('qrForm').dispatchEvent(new Event('submit')); 
@@ -554,7 +563,7 @@ function clearForm() {
 
 document.getElementById('templateHelpLink')?.addEventListener('click',(e)=>{ 
     e.preventDefault(); 
-    alert("📋 Required headers: PS ID, Full Name, Gender, Age, Offense Category, Start Date, End Date, Supervising Officer, Cluster"); 
+    alert("📋 Required headers: PS ID, Full Name, Gender, Age, Offense Category, Criminal Case Number, Start Date, End Date, Address, Supervising Officer, Cluster"); 
 });
 
 // Logout button

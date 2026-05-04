@@ -95,11 +95,21 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>Criminal Case Number</label>
+                            <input type="text" id="caseNumber" placeholder="e.g., RTC-2024-00123">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
                             <label>Supervision Period</label>
                             <div class="row" style="gap: 10px;">
                                 <input type="text" id="startDate" placeholder="Start MM-DD-YYYY">
                                 <input type="text" id="endDate" placeholder="End MM-DD-YYYY">
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="address" placeholder="Complete residential address">
                         </div>
                     </div>
                     <div class="row">
@@ -150,10 +160,9 @@
                 <span class="batch-modal-close" id="batchModalClose">&times;</span>
             </div>
             <div class="batch-modal-body">
-                <!-- Compact mass actions -->
                 <div class="batch-modal-actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
                     <button id="massDownloadQrsBtnModal" class="btn-mass" style="padding: 6px 12px; font-size: 12px; margin: 0;">📦 QR ZIP</button>
-                    <button id="massDownloadCardsBtnModal" class="btn-mass" style="padding: 6px 12px; font-size: 12px; margin: 0;">🆔Cards ZIP</button>
+                    <button id="massDownloadCardsBtnModal" class="btn-mass" style="padding: 6px 12px; font-size: 12px; margin: 0;">🆔 Cards ZIP</button>
                     <button id="massPrintCardsBtnModal" class="btn-mass" style="padding: 6px 12px; font-size: 12px; margin: 0;">🖨️ Print All</button>
                 </div>
                 <div id="massProgressModal" class="mass-progress" style="display: none;">
@@ -184,7 +193,7 @@
             </div>
             <div class="modal-footer">
                 <button id="modalDownloadQrBtn" class="btn-import">📥 Download QR</button>
-                <button id="modalDownloadCardBtn" class="btn-download">🆔ID Card</button>
+                <button id="modalDownloadCardBtn" class="btn-download">🆔 ID Card</button>
                 <button id="modalPrintBtn" class="btn-batch">🖨️ Print</button>
                 <button id="modalCloseBtn" class="btn-mass">Close</button>
             </div>
