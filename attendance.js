@@ -262,21 +262,27 @@ async function submitAttendance(e) {
     };
     
     try {
-        await fetch(APPS_SCRIPT_URL, {
+        // Remove 'mode: no-cors' to get proper response
+        const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             body: JSON.stringify(attendanceData),
             headers: { 'Content-Type': 'application/json' }
         });
         
-        showMessage('✓ Attendance recorded successfully! Email notification sent.', 'success');
+        const result = await response.json();
         
-        setTimeout(() => {
-            pusInfoSection.style.display = 'none';
-            attendanceForm.style.display = 'none';
-            attendanceForm.reset();
-            currentPUSData = null;
-        }, 2000);
+        if (result.success) {
+            showMessage('✓ Attendance recorded successfully!', 'success');
+            
+            setTimeout(() => {
+                pusInfoSection.style.display = 'none';
+                attendanceForm.style.display = 'none';
+                attendanceForm.reset();
+                currentPUSData = null;
+            }, 2000);
+        } else {
+            showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
+        }
     } catch (err) {
         console.error('Fetch error:', err);
         showMessage('Connection error. Please try again.', 'error');
