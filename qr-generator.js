@@ -75,7 +75,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
         <div class="official-id-card" style="width:337px; height:212px; background:white; border-radius:12px; overflow:hidden; font-family:'Segoe UI', Arial, sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; display:flex; flex-direction:column;">
             <div style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color:white; padding:6px 0; text-align:center; flex-shrink:0;">
                 <h3 style="font-size:10px; font-weight:600; letter-spacing:0.5px;">IRIGA CITY PAROLE AND PROBATION   OFFICE</h3>
-                <p style="font-size:7px; opacity:0.8;">Republic of the Philippines</p>
+                
             </div>
             <div style="display:flex; padding:10px 12px; gap:12px; flex:1; align-items:center;">
                 <div style="width:100px; text-align:center; flex-shrink:0;">
