@@ -9,6 +9,45 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        /* Additional style for collapsible section */
+        .collapsible-section {
+            margin-top: 20px;
+        }
+        .collapsible-header {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s;
+        }
+        .collapsible-header:hover {
+            background: #e9ecef;
+        }
+        .collapsible-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+        .collapsible-icon {
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+        .collapsible-icon.open {
+            transform: rotate(180deg);
+        }
+        .collapsible-content {
+            display: none;
+            margin-top: 10px;
+        }
+        .collapsible-content.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -141,14 +180,20 @@
                 <div id="printCardsContainer" class="print-layout"></div>
             </div>
             
-            <div class="card">
-                <h2>📋 Saved Persons</h2>
-                <div id="pusList" class="batch-list">
-                    <p>No records yet. Generate QR codes to add persons.</p>
+            <!-- COLLAPSIBLE SAVED PERSONS SECTION -->
+            <div class="card collapsible-section">
+                <div class="collapsible-header" id="savedPersonsHeader">
+                    <h3>📋 Saved Persons</h3>
+                    <span class="collapsible-icon" id="collapsibleIcon">▼</span>
                 </div>
-                <div class="btn-group">
-                    <button onclick="exportAllPUS()" class="btn-batch">📤 Export All Data</button>
-                    <button onclick="clearAllPUS()" class="btn-download">🗑️ Clear All</button>
+                <div class="collapsible-content" id="savedPersonsContent">
+                    <div id="pusList" class="batch-list">
+                        <p>No records yet. Generate QR codes to add persons.</p>
+                    </div>
+                    <div class="btn-group">
+                        <button onclick="exportAllPUS()" class="btn-batch">📤 Export All Data</button>
+                        <button onclick="clearAllPUS()" class="btn-download">🗑️ Clear All</button>
+                    </div>
                 </div>
             </div>
             
@@ -181,5 +226,17 @@
     <div id="idCardContainer" class="id-card-template"></div>
     
     <script src="qr-generator.js"></script>
+    
+    <script>
+        // Toggle functionality for collapsible section
+        const savedPersonsHeader = document.getElementById('savedPersonsHeader');
+        const savedPersonsContent = document.getElementById('savedPersonsContent');
+        const collapsibleIcon = document.getElementById('collapsibleIcon');
+        
+        savedPersonsHeader.addEventListener('click', function() {
+            savedPersonsContent.classList.toggle('show');
+            collapsibleIcon.classList.toggle('open');
+        });
+    </script>
 </body>
 </html>
