@@ -3,13 +3,13 @@
 // ============================================
 
 const GOOGLE_CLIENT_ID = '615931175551-cnd4ocg43ktu56jpmhdm9ulmbn5tedq1.apps.googleusercontent.com';
-const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwz-T51iqm7cZWmaZs8lxyCYluUbWKZR0S8OeMeEyVmQrfvMr8su46rcTz64ZV_WT0L/exec';
+const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbyQQVVTCkcewrTbxL9etCyCbN3I-RZ5YdT3p8fGkcLMVUSV6M3QkCS9lUoUxxCH_ws4/exec';
 
 const AUTHORIZED_EMAILS = [
     'iace2318i@gmail.com',
     'wq.rodalyn@gmail.com',
     'beta22926@gmail.com',
-    'johnrogerargarin@gmail.com'
+    
 ];
 
 // Helper function to format date from MM-DD-YYYY to readable format
