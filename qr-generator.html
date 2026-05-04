@@ -172,25 +172,34 @@
         </div>
     </div>
     
-    <!-- MODAL POPUP FOR SINGLE QR CODE -->
-    <div id="qrModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>📱 QR Code Generated</h2>
-                <span class="modal-close">&times;</span>
+    <!-- BATCH MODAL POPUP -->
+<div id="batchModal" class="batch-modal">
+    <div class="batch-modal-content">
+        <div class="batch-modal-header">
+            <h3>📦 Batch Generated QR Codes</h3>
+            <span class="batch-modal-close" id="batchModalClose">&times;</span>
+        </div>
+        <div class="batch-modal-body">
+            <!-- Compact mass actions -->
+            <div class="batch-modal-actions">
+                <button id="massDownloadQrsBtnModal" class="btn-mass" style="padding: 5px 10px; font-size: 11px;">📦 Download All QR</button>
+                <button id="massDownloadCardsBtnModal" class="btn-mass" style="padding: 5px 10px; font-size: 11px;">🪪 Download All ID Cards</button>
+                <button id="massPrintCardsBtnModal" class="btn-mass" style="padding: 5px 10px; font-size: 11px;">🖨️ Print All</button>
             </div>
-            <div class="modal-body">
-                <div id="modalQrcode" class="modal-qrcode"></div>
-                <div id="modalClientInfo" class="modal-client-info"></div>
+            <div id="massProgressModal" class="mass-progress" style="display: none;">
+                <div class="progress-bar" style="display: block;">
+                    <div class="progress-fill" id="massProgressFillModal"></div>
+                </div>
+                <div id="massStatusModal" class="status-message status-info" style="display: block;"></div>
             </div>
-            <div class="modal-footer">
-                <button id="modalDownloadQrBtn" class="btn-import">📥 Download QR</button>
-                <button id="modalDownloadCardBtn" class="btn-download">🪪 ID Card</button>
-                <button id="modalPrintBtn" class="btn-batch">🖨️ Print</button>
-                <button id="modalCloseBtn" class="btn-mass">Close</button>
-            </div>
+            <div id="batchListModal" class="batch-list-modal"></div>
+        </div>
+        <div class="batch-modal-footer">
+            <button id="clearBatchBtnModal" class="btn-download" style="padding: 5px 12px; font-size: 11px;">🗑️ Clear All</button>
+            <button id="closeBatchModalBtn" class="btn-mass" style="padding: 5px 12px; font-size: 11px;">Close</button>
         </div>
     </div>
+</div>
     
     <div id="idCardContainer" class="id-card-template"></div>
     

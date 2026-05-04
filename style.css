@@ -172,6 +172,45 @@ button:disabled {
     margin-top: 0;
 }
 
+/* Compact buttons for modal */
+.btn-modal-compact {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    margin: 0;
+    transition: all 0.2s;
+}
+
+.btn-modal-compact:hover {
+    background: #138496;
+    transform: scale(1.02);
+}
+
+.btn-modal-danger {
+    background: #dc3545;
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
+.btn-modal-danger:hover {
+    background: #c82333;
+}
+
+.btn-modal-primary {
+    background: #2a5298;
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
+.btn-modal-primary:hover {
+    background: #1e3c72;
+}
+
 .submit-btn {
     background: #2a5298;
     color: white;
@@ -786,7 +825,7 @@ button:disabled {
 }
 
 /* ============================================
-   BATCH MODAL STYLES
+   BATCH MODAL STYLES - COMPACT
    ============================================ */
 
 .batch-modal {
@@ -842,21 +881,40 @@ button:disabled {
 }
 
 .batch-modal-body {
-    padding: 20px;
+    padding: 15px;
     overflow-y: auto;
     flex: 1;
 }
 
+/* Compact mass action buttons in modal */
+.batch-modal-actions {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.batch-modal-actions button {
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
 .batch-list-modal {
-    max-height: 400px;
+    max-height: 380px;
     overflow-y: auto;
 }
 
 .batch-item-modal {
     background: #f8f9fa;
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -870,35 +928,41 @@ button:disabled {
 .batch-name-modal {
     font-weight: 600;
     color: #2c3e50;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .batch-details-modal {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #7f8c8d;
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 .batch-actions-modal {
     display: flex;
-    gap: 8px;
+    gap: 5px;
     flex-wrap: wrap;
 }
 
 .batch-actions-modal button {
     margin: 0;
-    padding: 5px 10px;
-    font-size: 11px;
+    padding: 3px 8px;
+    font-size: 10px;
 }
 
 .batch-modal-footer {
-    padding: 15px 20px;
+    padding: 10px 15px;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
     border-top: 1px solid #eee;
     background: #f8f9fa;
+}
+
+.batch-modal-footer button {
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 12px;
 }
 
 /* ============================================
@@ -1074,7 +1138,7 @@ button:disabled {
     .file-input, #excelFile, #importBtn, #downloadTemplateBtn,
     #templateHelpLink, #importStatus, .progress-bar, #batchCard .batch-list,
     .modal, .admin-link, .scanner-area, .login-section, .user-info,
-    .config-section {
+    .config-section, .batch-modal {
         display: none !important;
     }
     #batchCard {
@@ -1141,6 +1205,21 @@ button:disabled {
         margin: 5% auto;
         max-height: 85vh;
     }
+    .batch-modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .batch-modal-actions button {
+        width: 100%;
+    }
+    .batch-item-modal {
+        flex-direction: column;
+        text-align: center;
+    }
+    .batch-actions-modal {
+        margin-top: 6px;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 550px) {
@@ -1184,8 +1263,14 @@ button:disabled {
         text-align: center;
     }
     .batch-actions-modal {
-        margin-top: 8px;
+        margin-top: 6px;
         justify-content: center;
+    }
+    .batch-name-modal {
+        font-size: 0.75rem;
+    }
+    .batch-details-modal {
+        font-size: 0.6rem;
     }
 }
 
