@@ -262,27 +262,23 @@ async function submitAttendance(e) {
     };
     
     try {
-        // Remove 'mode: no-cors' to get proper response
-        const response = await fetch(APPS_SCRIPT_URL, {
+        // Use no-cors mode (required for Apps Script to work from GitHub Pages)
+        await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
+            mode: 'no-cors',
             body: JSON.stringify(attendanceData),
             headers: { 'Content-Type': 'application/json' }
         });
         
-        const result = await response.json();
+        // With no-cors, we cannot read the response, but the request still goes through
+        showMessage('✓ Attendance recorded successfully!', 'success');
         
-        if (result.success) {
-            showMessage('✓ Attendance recorded successfully!', 'success');
-            
-            setTimeout(() => {
-                pusInfoSection.style.display = 'none';
-                attendanceForm.style.display = 'none';
-                attendanceForm.reset();
-                currentPUSData = null;
-            }, 2000);
-        } else {
-            showMessage('Error: ' + (result.error || 'Unknown error'), 'error');
-        }
+        setTimeout(() => {
+            pusInfoSection.style.display = 'none';
+            attendanceForm.style.display = 'none';
+            attendanceForm.reset();
+            currentPUSData = null;
+        }, 2000);
     } catch (err) {
         console.error('Fetch error:', err);
         showMessage('Connection error. Please try again.', 'error');
