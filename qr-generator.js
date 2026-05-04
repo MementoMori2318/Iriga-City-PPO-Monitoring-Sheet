@@ -396,7 +396,7 @@ function displayBatchResults(qrs) {
             </div>
             <div class="batch-actions-modal">
                 <button class="btn-small" onclick="downloadSingleBatch(${index})">📥 QR</button>
-                <button class="btn-small" onclick="downloadSingleBatchCard(${index})">🪪 Card</button>
+                <button class="btn-small" onclick="downloadSingleBatchCard(${index})">🆔 Card</button>
                 <button class="btn-small" onclick="printSingleBatchCard(${index})">🖨️ Print</button>
             </div>
         </div>
