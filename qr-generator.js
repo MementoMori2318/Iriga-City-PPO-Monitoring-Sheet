@@ -320,10 +320,10 @@ document.getElementById('downloadTemplateBtn')?.addEventListener('click', functi
             'Male',
             '35',
             'Drug Offense',
-            'RTC-2024-00123',
+            'RTC-2024-00123', // Criminal Case Number (CC)
             '2023-08-15',
             '2026-08-15',
-            '123 Purok 1, Brgy. San Juan, Iriga City',
+            '123 Purok 1, Brgy. San Juan, Iriga City', // Address
             'SSPO JANET B. PAVIA',
             'IRIGA'
         ],
@@ -333,17 +333,18 @@ document.getElementById('downloadTemplateBtn')?.addEventListener('click', functi
             'Female',
             '42',
             'Non-Drug Offense',
-            'RTC-2024-00456',
+            'RTC-2024-00456', // Criminal Case Number (CC)
             '2023-09-01',
             '2026-09-01',
-            '456 Mabini St., Iriga City',
+            '456 Mabini St., Iriga City', // Address
             'SSPO JANET B. PAVIA',
             'NABUA'
         ]
     ];
+
     const ws = XLSX.utils.aoa_to_sheet(templateData);
-    const wb = XLSX.utils.book_new(); 
-    XLSX.utils.book_append_sheet(wb, ws, 'PUS_Template'); 
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'PUS_Template');
     XLSX.writeFile(wb, 'Iriga_PPO_QR_Template.xlsx');
 });
 function formatExcelDate(value) {
