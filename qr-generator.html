@@ -101,11 +101,20 @@
                     </div>
                     <div class="row">
                         <div class="form-group">
-                            <label>Supervision Period</label>
+                            <label>Supervision Period (YYYY-MM-DD)</label>
                             <div class="row" style="gap: 10px;">
-                                <input type="date" id="startDate" placeholder="Start MM-DD-YYYY">
-                                <input type="date" id="endDate" placeholder="End MM-DD-YYYY">
+                                <input type="date" id="startDate" style="flex:1;">
+                                <input type="date" id="endDate" style="flex:1;">
                             </div>
+                            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                                <button type="button" onclick="addYears(1)" style="background: #28a745; padding: 5px 12px; font-size: 12px; margin: 0;">➕ +1 Year</button>
+                                <button type="button" onclick="addYears(2)" style="background: #28a745; padding: 5px 12px; font-size: 12px; margin: 0;">➕ +2 Years</button>
+                                <button type="button" onclick="addYears(3)" style="background: #28a745; padding: 5px 12px; font-size: 12px; margin: 0;">➕ +3 Years</button>
+                                <button type="button" onclick="addMonths(6)" style="background: #17a2b8; padding: 5px 12px; font-size: 12px; margin: 0;">📅 +6 Months</button>
+                                <button type="button" onclick="setEndOfYear()" style="background: #fd7e14; padding: 5px 12px; font-size: 12px; margin: 0;">🎯 End of Year</button>
+                                <button type="button" onclick="clearDates()" style="background: #6c757d; padding: 5px 12px; font-size: 12px; margin: 0;">🗑️ Clear</button>
+                            </div>
+                            <small style="display: block; margin-top: 5px; color: #666;">Click buttons to auto-fill end date based on start date</small>
                         </div>
                         <div class="form-group">
                             <label>Address</label>
@@ -203,45 +212,5 @@
     <div id="idCardContainer" class="id-card-template"></div>
     
     <script src="qr-generator.js"></script>
-    
-    <script>
-        // Toggle functionality for collapsible section
-        const savedPersonsHeader = document.getElementById('savedPersonsHeader');
-        const savedPersonsContent = document.getElementById('savedPersonsContent');
-        const collapsibleIcon = document.getElementById('collapsibleIcon');
-        
-        savedPersonsHeader.addEventListener('click', function() {
-            savedPersonsContent.classList.toggle('show');
-            collapsibleIcon.classList.toggle('open');
-        });
-        
-        // Batch Modal functionality
-        const batchModal = document.getElementById('batchModal');
-        const batchModalClose = document.getElementById('batchModalClose');
-        const closeBatchModalBtn = document.getElementById('closeBatchModalBtn');
-        
-        function openBatchModal() {
-            batchModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeBatchModal() {
-            batchModal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-        
-        batchModalClose.addEventListener('click', closeBatchModal);
-        closeBatchModalBtn.addEventListener('click', closeBatchModal);
-        
-        window.addEventListener('click', function(event) {
-            if (event.target === batchModal) {
-                closeBatchModal();
-            }
-        });
-        
-        // Expose functions for qr-generator.js
-        window.openBatchModal = openBatchModal;
-        window.closeBatchModal = closeBatchModal;
-    </script>
 </body>
 </html>
