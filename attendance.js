@@ -16,19 +16,25 @@ const AUTHORIZED_EMAILS = [
 function formatReadableDate(dateStr) {
     if (!dateStr || dateStr === 'N/A') return 'N/A';
     try {
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-            const month = parts[0];
-            const day = parts[1];
-            const year = parts[2];
-            const date = new Date(year, month - 1, day);
-            return date.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
+        let date;
+
+        if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+
+            if (parts[0].length === 4) {
+                // YYYY-MM-DD
+                date = new Date(dateStr);
+            } else {
+                // MM-DD-YYYY
+                date = new Date(parts[2], parts[0] - 1, parts[1]);
+            }
         }
-        return dateStr;
+
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
     } catch (e) {
         return dateStr;
     }
