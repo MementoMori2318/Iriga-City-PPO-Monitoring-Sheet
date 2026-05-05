@@ -10,7 +10,6 @@ const AUTHORIZED_EMAILS = [
     'wq.rodalyn@gmail.com',
     'beta22926@gmail.com',
     'johnrogerargarin@gmail.com'
-    
 ];
 
 // Helper function to format date from MM-DD-YYYY to readable format
@@ -211,6 +210,8 @@ async function processQR(qrData) {
         document.getElementById('displayPUSName').textContent = data.pusName || data.clientName || 'N/A';
         document.getElementById('displayGenderAge').textContent = `${data.gender || 'N/A'} / ${data.age || 'N/A'}`;
         document.getElementById('displayOffense').textContent = data.offenseCategory || 'N/A';
+        document.getElementById('displayCaseNumber').textContent = data.caseNumber || 'N/A';
+        document.getElementById('displayAddress').textContent = data.address || 'N/A';
         
         // Format dates for readable display
         const startDateFormatted = formatReadableDate(data.startDate);
@@ -254,6 +255,8 @@ async function submitAttendance(e) {
         gender: currentPUSData.gender,
         age: currentPUSData.age,
         offenseCategory: currentPUSData.offenseCategory,
+        caseNumber: currentPUSData.caseNumber,
+        address: currentPUSData.address,
         startDate: currentPUSData.startDate,
         endDate: currentPUSData.endDate,
         supervisingOfficer: currentPUSData.supervisingOfficer,
