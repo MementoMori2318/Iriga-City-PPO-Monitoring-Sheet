@@ -18,58 +18,6 @@ const AUTHORIZED_EMAILS = [
 const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Criminal Case Number', 'Start Date', 'End Date', 'Address', 'Supervising Officer', 'Cluster'];
 
 // ============================================
-// DATE HELPER FUNCTIONS
-// ============================================
-
-// Add years to start date
-function addYears(years) {
-    const startDate = document.getElementById('startDate').value;
-    if (startDate) {
-        const date = new Date(startDate);
-        date.setFullYear(date.getFullYear() + years);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        document.getElementById('endDate').value = `${year}-${month}-${day}`;
-    } else {
-        alert('Please select a start date first');
-    }
-}
-
-// Add months to start date
-function addMonths(months) {
-    const startDate = document.getElementById('startDate').value;
-    if (startDate) {
-        const date = new Date(startDate);
-        date.setMonth(date.getMonth() + months);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        document.getElementById('endDate').value = `${year}-${month}-${day}`;
-    } else {
-        alert('Please select a start date first');
-    }
-}
-
-// Set end date to December 31 of the start date year
-function setEndOfYear() {
-    const startDate = document.getElementById('startDate').value;
-    if (startDate) {
-        const date = new Date(startDate);
-        const year = date.getFullYear();
-        document.getElementById('endDate').value = `${year}-12-31`;
-    } else {
-        alert('Please select a start date first');
-    }
-}
-
-// Clear both date fields
-function clearDates() {
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-}
-
-// ============================================
 // SESSION CHECK - SHARED WITH INDEX.HTML
 // ============================================
 
@@ -621,18 +569,6 @@ document.getElementById('templateHelpLink')?.addEventListener('click',(e)=>{
 document.getElementById('logoutBtn')?.addEventListener('click', function() {
     logout();
 });
-
-// ============================================
-// BATCH MODAL FUNCTIONS (called from HTML)
-// ============================================
-
-// These functions are referenced in the HTML onclick events
-window.addYears = addYears;
-window.addMonths = addMonths;
-window.setEndOfYear = setEndOfYear;
-window.clearDates = clearDates;
-window.openBatchModal = openBatchModal;
-window.closeBatchModal = closeBatchModal;
 
 // ============================================
 // INITIALIZATION - CHECK SESSION ONLY
