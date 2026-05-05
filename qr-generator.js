@@ -119,7 +119,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
                 
-                <span>www.irigacityppo@gmail.com</span>
+                <span>irigacityppo@gmail.com</span>
             </div>
         </div>
     `;
@@ -312,6 +312,7 @@ function printSingleCard(pusId, pusName, startDate, endDate, cluster, qrImageDat
 }
 
 document.getElementById('downloadTemplateBtn')?.addEventListener('click', function() {
+
     const templateData = [
         TEMPLATE_HEADERS,
         [
@@ -320,10 +321,10 @@ document.getElementById('downloadTemplateBtn')?.addEventListener('click', functi
             'Male',
             '35',
             'Drug Offense',
-            'RTC-2024-00123', 
+            'RTC-2024-00123',
             '2023-08-15',
             '2026-08-15',
-            '123 Purok 1, Brgy. San Juan, Iriga City', 
+            '123 Purok 1, Brgy. San Juan, Iriga City',
             'SSPO JANET B. PAVIA',
             'IRIGA'
         ],
@@ -333,18 +334,62 @@ document.getElementById('downloadTemplateBtn')?.addEventListener('click', functi
             'Female',
             '42',
             'Non-Drug Offense',
-            'RTC-2024-00456', 
+            'RTC-2024-00456',
             '2023-09-01',
             '2026-09-01',
-            '456 Mabini St., Iriga City', 
+            '456 Mabini St., Iriga City',
             'SSPO JANET B. PAVIA',
             'NABUA'
         ]
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+    // =========================
+    // AUTO COLUMN WIDTH
+    // =========================
+    const colWidths = templateData[0].map((_, colIndex) => {
+        const maxLength = Math.max(
+            ...templateData.map(row => (row[colIndex] ? row[colIndex].toString().length : 10))
+        );
+        return { wch: Math.min(maxLength + 2, 30) };
+    });
+
+    ws['!cols'] = colWidths;
+
+    // =========================
+    // BOLD HEADERS
+    // =========================
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (!ws[cellAddress]) continue;
+
+        ws[cellAddress].s = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "D9E1F2" } },
+            alignment: { horizontal: "center" }
+        };
+    }
+
+    // =========================
+    // LOCK SHEET
+    // =========================
+    ws['!protect'] = {
+        password: "iriga_ppo",
+        sheet: true,
+        formatCells: false,
+        formatColumns: false,
+        formatRows: false,
+        insertRows: false,
+        insertColumns: false,
+        deleteRows: false,
+        deleteColumns: false
+    };
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'PUS_Template');
+
     XLSX.writeFile(wb, 'Iriga_PPO_QR_Template.xlsx');
 });
 function formatExcelDate(value) {
