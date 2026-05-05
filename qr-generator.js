@@ -105,7 +105,7 @@ function createSingleIDCardHTML(pusId, pusName, startDate, endDate, cluster, qrI
             </div>
             <div style="background:#f0f0f0; padding:5px 10px; display:flex; justify-content:space-between; font-size:6px; color:#666; border-top:1px solid #ddd; flex-shrink:0;">
                 <span>Issued: ${issueDate}</span>
-                <span>Valid until: ${endDate || 'N/A'}</span>
+                
                 <span>www.irigacityppo@gmail.com</span>
             </div>
         </div>
