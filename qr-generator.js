@@ -12,10 +12,23 @@ let currentUser = null;
 const AUTHORIZED_EMAILS = [
     'iace2318i@gmail.com',
     'wq.rodalyn@gmail.com',
-    'beta22926@gmail.com'
+    'beta22926@gmail.com', 
+    'johnrogerargarin@gmail.com'
 ];
 
-const TEMPLATE_HEADERS = ['PS ID', 'Full Name', 'Gender', 'Age', 'Offense Category', 'Criminal Case Number', 'Start Date', 'End Date', 'Address', 'Supervising Officer', 'Cluster'];
+const TEMPLATE_HEADERS = [
+    'PS ID',
+    'Full Name',
+    'Gender',
+    'Age',
+    'Offense Category',
+    'Criminal Case Number',
+    'Start Date',
+    'End Date',
+    'Address',
+    'Supervising Officer',
+    'Cluster'
+];
 
 // ============================================
 // SESSION CHECK - SHARED WITH INDEX.HTML
@@ -299,16 +312,62 @@ function printSingleCard(pusId, pusName, startDate, endDate, cluster, qrImageDat
 }
 
 document.getElementById('downloadTemplateBtn')?.addEventListener('click', function() {
-    const templateData = [TEMPLATE_HEADERS, 
-        ['PS-2024-001', 'Dela Cruz, Juan A.', 'Male', '35', 'Drug Offense', 'RTC-2024-00123', '08-15-2023', '08-15-2026', '123 Purok 1, Brgy. San Juan, Iriga City', 'SSPO JANET B. PAVIA', 'IRIGA'], 
-        ['PS-2024-002', 'Reyes, Maria S.', 'Female', '42', 'Non-Drug Offense', 'RTC-2024-00456', '09-01-2023', '09-01-2026', '456 Mabini St., Iriga City', 'SSPO JANET B. PAVIA', 'NABUA']
+    const templateData = [
+        TEMPLATE_HEADERS,
+        [
+            'PS-2024-001',
+            'Dela Cruz, Juan A.',
+            'Male',
+            '35',
+            'Drug Offense',
+            'RTC-2024-00123',
+            '2023-08-15',
+            '2026-08-15',
+            '123 Purok 1, Brgy. San Juan, Iriga City',
+            'SSPO JANET B. PAVIA',
+            'IRIGA'
+        ],
+        [
+            'PS-2024-002',
+            'Reyes, Maria S.',
+            'Female',
+            '42',
+            'Non-Drug Offense',
+            'RTC-2024-00456',
+            '2023-09-01',
+            '2026-09-01',
+            '456 Mabini St., Iriga City',
+            'SSPO JANET B. PAVIA',
+            'NABUA'
+        ]
     ];
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     const wb = XLSX.utils.book_new(); 
     XLSX.utils.book_append_sheet(wb, ws, 'PUS_Template'); 
     XLSX.writeFile(wb, 'Iriga_PPO_QR_Template.xlsx');
 });
+function formatExcelDate(value) {
+    if (!value) return '';
 
+    // already correct (YYYY-MM-DD)
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value;
+    }
+
+    // Excel serial number
+    if (typeof value === 'number') {
+        const date = new Date((value - 25569) * 86400 * 1000);
+        return date.toISOString().split('T')[0];
+    }
+
+    // other string formats
+    const date = new Date(value);
+    if (!isNaN(date)) {
+        return date.toISOString().split('T')[0];
+    }
+
+    return '';
+}
 async function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -361,10 +420,10 @@ document.getElementById('importBtn')?.addEventListener('click', async function()
                 gender: row['Gender'] || row['gender'] || 'Female',
                 age: parseInt(row['Age'] || row['age'] || 0),
                 offenseCategory: row['Offense Category'] || row['offenseCategory'] || 'Drug Offense',
-                caseNumber: row['Criminal Case Number'] || row['caseNumber'] || '',
-                startDate: row['Start Date'] || row['startDate'] || '',
-                endDate: row['End Date'] || row['endDate'] || '',
-                address: row['Address'] || row['address'] || '',
+                startDate: formatExcelDate(row['Start Date'] || row['startDate']),
+                endDate: formatExcelDate(row['End Date'] || row['endDate']),
+                address: row['Address']?.toString().trim() || '',
+                caseNumber: row['Criminal Case Number']?.toString().trim() || '',
                 supervisingOfficer: row['Supervising Officer'] || row['supervisingOfficer'] || '',
                 cluster: row['Cluster'] || row['cluster'] || ''
             };
