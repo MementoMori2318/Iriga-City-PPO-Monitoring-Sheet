@@ -320,10 +320,10 @@ document.getElementById('downloadTemplateBtn')?.addEventListener('click', functi
             'Male',
             '35',
             'Drug Offense',
-            'RTC-2024-00123', // Criminal Case Number (CC)
+            'RTC-2024-00123', 
             '2023-08-15',
             '2026-08-15',
-            '123 Purok 1, Brgy. San Juan, Iriga City', // Address
+            '123 Purok 1, Brgy. San Juan, Iriga City', 
             'SSPO JANET B. PAVIA',
             'IRIGA'
         ],
@@ -333,10 +333,10 @@ document.getElementById('downloadTemplateBtn')?.addEventListener('click', functi
             'Female',
             '42',
             'Non-Drug Offense',
-            'RTC-2024-00456', // Criminal Case Number (CC)
+            'RTC-2024-00456', 
             '2023-09-01',
             '2026-09-01',
-            '456 Mabini St., Iriga City', // Address
+            '456 Mabini St., Iriga City', 
             'SSPO JANET B. PAVIA',
             'NABUA'
         ]
