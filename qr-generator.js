@@ -712,6 +712,12 @@ document.getElementById('templateHelpLink')?.addEventListener('click',(e)=>{
 });
 
 // Logout button
+
+function logout() {
+    localStorage.removeItem('loggedInUser');
+    currentUser = null;
+    window.location.href = "index.html";
+}
 document.getElementById('logoutBtn')?.addEventListener('click', function() {
     logout();
 });
