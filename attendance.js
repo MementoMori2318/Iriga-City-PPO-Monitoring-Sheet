@@ -188,25 +188,33 @@ async function openScanner() {
 
 function scanQR() {
     if (!scanning) return;
+
     if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
         const canvas = document.createElement('canvas');
         canvas.width = scannerVideo.videoWidth;
         canvas.height = scannerVideo.videoHeight;
+
         const ctx = canvas.getContext('2d');
         ctx.drawImage(scannerVideo, 0, 0);
+
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
         if (typeof jsQR !== 'function') {
             showMessage('QR scanner library not loaded.', 'error');
             scanning = false;
             return;
         }
+
         const code = jsQR(imgData.data, canvas.width, canvas.height);
+
         if (code) {
             scanning = false;
             closeScanner();
             processQR(code.data);
+            return; // ✅ stop loop immediately
         }
     }
+
     requestAnimationFrame(scanQR);
 }
 
@@ -261,8 +269,8 @@ async function processQR(qrData) {
     setText('displayCluster', data.cluster || 'N/A');
 
     // ✅ Show UI
-    pusInfoSection.style.display = 'block';
-    attendanceForm.style.display = 'block';
+    pusInfoSection?.style && (pusInfoSection.style.display = 'block');
+    attendanceForm?.style && (attendanceForm.style.display = 'block');
 
     showMessage('✓ Person Under Supervision loaded. Record attendance.', 'success');
 }
@@ -299,9 +307,9 @@ async function submitAttendance(e) {
         endDate: currentPUSData.endDate,
         supervisingOfficer: currentPUSData.supervisingOfficer,
         cluster: currentPUSData.cluster,
-        remarks: document.getElementById('remarks').value,
-        familySupport: document.getElementById('familySupport').value,
-        notes: document.getElementById('notes').value
+        remarks: document.getElementById('remarks')?.value || '',
+        familySupport: document.getElementById('familySupport')?.value || '',
+        notes: document.getElementById('notes')?.value || ''
     };
     
     try {
@@ -362,7 +370,9 @@ saveUrlBtn.onclick = () => {
 resetUrlBtn.onclick = () => {
     localStorage.removeItem('appsScriptUrl');
     APPS_SCRIPT_URL = APPS_SCRIPT_URL_DEFAULT;
-    scriptUrlInput.value = APPS_SCRIPT_URL_DEFAULT;
+    if (scriptUrlInput) {
+        scriptUrlInput.value = APPS_SCRIPT_URL_DEFAULT;
+    }
     showMessage('✓ URL reset to default. Click "Save URL" to confirm.', 'success');
 };
 
