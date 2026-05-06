@@ -143,19 +143,27 @@ function checkSession() {
 }
 
 function logout() {
-    google.accounts.id.disableAutoSelect();
+    if (window.google && google.accounts) {
+        google.accounts.id.disableAutoSelect();
+    }
+
     localStorage.removeItem('loggedInUser');
     currentUser = null;
+
     mainContent.style.display = 'none';
     loginSection.style.display = 'block';
     userInfo.style.display = 'none';
     pusInfoSection.style.display = 'none';
     attendanceForm.style.display = 'none';
+
     currentPUSData = null;
+
+    attendanceForm?.reset();
+
     showMessage('You have been signed out.', 'info');
 }
 
-logoutBtn.addEventListener('click', logout);
+logoutBtn?.addEventListener('click', logout);
 
 async function openScanner() {
     if (!APPS_SCRIPT_URL) {
@@ -187,6 +195,11 @@ function scanQR() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(scannerVideo, 0, 0);
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        if (typeof jsQR !== 'function') {
+            showMessage('QR scanner library not loaded.', 'error');
+            scanning = false;
+            return;
+        }
         const code = jsQR(imgData.data, canvas.width, canvas.height);
         if (code) {
             scanning = false;
@@ -199,40 +212,59 @@ function scanQR() {
 
 function closeScanner() {
     scanning = false;
+
     if (videoStream) {
-        videoStream.getTracks().forEach(t => t.stop());
+        videoStream.getTracks().forEach(track => track.stop());
         videoStream = null;
     }
+
+    if (scannerVideo) {
+        scannerVideo.srcObject = null;
+    }
+
     scannerModal.style.display = 'none';
 }
 
 async function processQR(qrData) {
     showMessage('Processing QR code...', 'info');
+
+    // ✅ Parse QR safely
+    let data;
     try {
-        const data = JSON.parse(qrData);
-        currentPUSData = data;
-        
-        document.getElementById('displayPUSId').textContent = data.pusId || data.clientId || 'N/A';
-        document.getElementById('displayPUSName').textContent = data.pusName || data.clientName || 'N/A';
-        document.getElementById('displayGenderAge').textContent = `${data.gender || 'N/A'} / ${data.age || 'N/A'}`;
-        document.getElementById('displayOffense').textContent = data.offenseCategory || 'N/A';
-        document.getElementById('displayCaseNumber').textContent = data.caseNumber || 'N/A';
-        document.getElementById('displayAddress').textContent = data.address || 'N/A';
-        
-        // Format dates for readable display
-        const startDateFormatted = formatReadableDate(data.startDate);
-        const endDateFormatted = formatReadableDate(data.endDate);
-        document.getElementById('displayPeriod').textContent = `${startDateFormatted} to ${endDateFormatted}`;
-        
-        document.getElementById('displayOfficer').textContent = data.supervisingOfficer || 'N/A';
-        document.getElementById('displayCluster').textContent = data.cluster || 'N/A';
-        
-        pusInfoSection.style.display = 'block';
-        attendanceForm.style.display = 'block';
-        showMessage('✓ Person Under Supervision loaded. Record attendance.', 'success');
+        data = JSON.parse(qrData);
     } catch (e) {
-        showMessage('Invalid QR code. Please scan a valid PS QR code.', 'error');
+        showMessage('Invalid QR code format.', 'error');
+        return;
     }
+
+    // ✅ Store data
+    currentPUSData = data;
+
+    // ✅ Display data safely
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    
+    setText('displayPUSId', data.pusId || data.clientId || 'N/A');
+    setText('displayPUSName', data.pusName || data.clientName || 'N/A');
+    setText('displayGenderAge', `${data.gender || 'N/A'} / ${data.age || 'N/A'}`);
+    setText('displayOffense', data.offenseCategory || 'N/A');
+    setText('displayCaseNumber', data.caseNumber || 'N/A');
+    setText('displayAddress', data.address || 'N/A');
+    
+    const startDateFormatted = formatReadableDate(data.startDate);
+    const endDateFormatted = formatReadableDate(data.endDate);
+    setText('displayPeriod', `${startDateFormatted} to ${endDateFormatted}`);
+    
+    setText('displayOfficer', data.supervisingOfficer || 'N/A');
+    setText('displayCluster', data.cluster || 'N/A');
+
+    // ✅ Show UI
+    pusInfoSection.style.display = 'block';
+    attendanceForm.style.display = 'block';
+
+    showMessage('✓ Person Under Supervision loaded. Record attendance.', 'success');
 }
 
 async function submitAttendance(e) {
@@ -277,8 +309,7 @@ async function submitAttendance(e) {
         await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
-            body: JSON.stringify(attendanceData),
-            headers: { 'Content-Type': 'application/json' }
+            body: JSON.stringify(attendanceData)
         });
         
         // With no-cors, we cannot read the response, but the request still goes through
@@ -287,7 +318,7 @@ async function submitAttendance(e) {
         setTimeout(() => {
             pusInfoSection.style.display = 'none';
             attendanceForm.style.display = 'none';
-            attendanceForm.reset();
+            attendanceForm?.reset();
             currentPUSData = null;
         }, 2000);
     } catch (err) {
@@ -306,11 +337,15 @@ function showMessage(msg, type) {
     }, 4000);
 }
 
-adminLink.onclick = (e) => {
+adminLink?.addEventListener('click', (e) => {
     e.preventDefault();
-    configSection.style.display = configSection.style.display === 'none' ? 'block' : 'none';
-    scriptUrlInput.value = APPS_SCRIPT_URL;
-};
+    configSection.style.display =
+        configSection.style.display === 'none' ? 'block' : 'none';
+
+    if (scriptUrlInput) {
+        scriptUrlInput.value = APPS_SCRIPT_URL;
+    }
+});
 
 saveUrlBtn.onclick = () => {
     const url = scriptUrlInput.value.trim();
@@ -331,8 +366,8 @@ resetUrlBtn.onclick = () => {
     showMessage('✓ URL reset to default. Click "Save URL" to confirm.', 'success');
 };
 
-scannerTrigger.onclick = openScanner;
-attendanceForm.onsubmit = submitAttendance;
+scannerTrigger?.addEventListener('click', openScanner);
+attendanceForm?.addEventListener('submit', submitAttendance);
 window.closeScanner = closeScanner;
 
 checkSession();
@@ -343,4 +378,6 @@ if (typeof google !== 'undefined' && google.accounts) {
     window.addEventListener('load', () => setTimeout(initGoogleSignIn, 500));
 }
 
-scriptUrlInput.value = APPS_SCRIPT_URL;
+if (scriptUrlInput) {
+    scriptUrlInput.value = APPS_SCRIPT_URL;
+}
