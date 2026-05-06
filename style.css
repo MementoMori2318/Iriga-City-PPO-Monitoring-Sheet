@@ -103,6 +103,15 @@ textarea {
     grid-template-columns: 1fr 1fr;
     gap: 15px;
 }
+.date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.small-label {
+    font-size: 12px;
+}
 
 /* ============================================
    BUTTON STYLES
