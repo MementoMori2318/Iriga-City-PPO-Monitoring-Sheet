@@ -36,28 +36,39 @@ const TEMPLATE_HEADERS = [
 
 function checkSession() {
     const saved = localStorage.getItem('loggedInUser');
+
     if (saved) {
-        const user = JSON.parse(saved);
-        if (AUTHORIZED_EMAILS.includes(user.email)) {
+        try {
+            const user = JSON.parse(saved);
+
+            // Validate structure
+            if (!user || !user.email || !AUTHORIZED_EMAILS.includes(user.email)) {
+                throw new Error("Invalid session");
+            }
+
             currentUser = user;
+
             document.getElementById('sessionExpired').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
+
             document.getElementById('userNameDisplay').textContent = user.name || user.email;
             document.getElementById('userEmailDisplay').textContent = user.email;
-            if (user.picture) document.getElementById('userAvatar').src = user.picture;
+
+            if (user.picture) {
+                document.getElementById('userAvatar').src = user.picture;
+            }
+
             return true;
-        } else {
+
+        } catch (e) {
+            console.warn("Session corrupted:", e);
             localStorage.removeItem('loggedInUser');
         }
     }
+
     document.getElementById('sessionExpired').style.display = 'block';
     document.getElementById('mainContent').style.display = 'none';
     return false;
-}
-
-function logout() {
-    localStorage.removeItem('loggedInUser');
-    window.location.href = 'index.html';
 }
 
 // ============================================
@@ -183,24 +194,34 @@ function showQRModal(qrCanvas, clientData) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px;">
             <div><strong>📋 PS ID:</strong></div>
             <div>${escapeHtml(clientData.pusId)}</div>
+
             <div><strong>👤 Full Name:</strong></div>
             <div>${escapeHtml(clientData.pusName)}</div>
+
             <div><strong>⚥ Gender:</strong></div>
-            <div>${clientData.gender}</div>
+            <div>${escapeHtml(clientData.gender)}</div>
+
             <div><strong>🎂 Age:</strong></div>
-            <div>${clientData.age}</div>
+            <div>${escapeHtml(clientData.age)}</div>
+
             <div><strong>⚖️ Offense:</strong></div>
-            <div>${clientData.offenseCategory}</div>
+            <div>${escapeHtml(clientData.offenseCategory)}</div>
+
             <div><strong>⚖️ Case No.:</strong></div>
             <div>${escapeHtml(clientData.caseNumber || 'N/A')}</div>
+
             <div><strong>📅 Start Date:</strong></div>
-            <div>${clientData.startDate || 'N/A'}</div>
+            <div>${escapeHtml(clientData.startDate || 'N/A')}</div>
+
             <div><strong>📅 End Date:</strong></div>
-            <div>${clientData.endDate || 'N/A'}</div>
+            <div>${escapeHtml(clientData.endDate || 'N/A')}</div>
+
             <div><strong>🏠 Address:</strong></div>
             <div>${escapeHtml(clientData.address || 'N/A')}</div>
+
             <div><strong>👮 Officer:</strong></div>
             <div>${escapeHtml(clientData.supervisingOfficer || 'N/A')}</div>
+
             <div><strong>📍 Cluster:</strong></div>
             <div>${escapeHtml(clientData.cluster || 'N/A')}</div>
         </div>
@@ -223,35 +244,54 @@ function closeModal() {
 
 document.getElementById('qrForm')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    
-    const pusId = document.getElementById('pusId').value.trim();
-    const pusName = document.getElementById('pusName').value.trim();
-    const age = document.getElementById('age').value.trim();
-    
-    if (!pusId || !pusName || !age) { 
-        alert('Please fill in PS ID, Full Name, and Age'); 
-        return; 
+
+    const btn = document.getElementById('generateQrBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Generating...";
     }
-    
-    const pusData = { 
-        pusId, 
-        pusName, 
-        gender: document.getElementById('gender').value, 
-        age: parseInt(age), 
-        offenseCategory: document.getElementById('offenseCategory').value,
-        caseNumber: document.getElementById('caseNumber').value,
-        startDate: document.getElementById('startDate').value, 
-        endDate: document.getElementById('endDate').value,
-        address: document.getElementById('address').value,
-        supervisingOfficer: document.getElementById('officer').value, 
-        cluster: document.getElementById('cluster').value 
-    };
-    
-    currentQRData = JSON.stringify(pusData);
-    const canvas = await generateQRCode(currentQRData, 300);
-    currentQRCanvas = canvas;
-    showQRModal(canvas, pusData);
-    saveToLocalStorage(pusData);
+
+    try {
+        const pusId = document.getElementById('pusId').value.trim();
+        const pusName = document.getElementById('pusName').value.trim();
+        const age = document.getElementById('age').value.trim();
+
+        if (!pusId || !pusName || !age) {
+            alert('Please fill in PS ID, Full Name, and Age');
+            return;
+        }
+
+        const pusData = { 
+            pusId, 
+            pusName, 
+            gender: document.getElementById('gender').value, 
+            age: parseInt(age), 
+            offenseCategory: document.getElementById('offenseCategory').value,
+            caseNumber: document.getElementById('caseNumber').value,
+            startDate: formatExcelDate(document.getElementById('startDate').value), 
+            endDate: formatExcelDate(document.getElementById('endDate').value),
+            address: document.getElementById('address').value,
+            supervisingOfficer: document.getElementById('officer').value, 
+            cluster: document.getElementById('cluster').value 
+        };
+
+        currentQRData = JSON.stringify(pusData);
+
+        const canvas = await generateQRCode(currentQRData, 300);
+        currentQRCanvas = canvas;
+
+        showQRModal(canvas, pusData);
+        saveToLocalStorage(pusData);
+
+    } catch (error) {
+        console.error(error);
+        alert("QR generation failed");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "🔲 Generate QR Code";
+        }
+    }
 });
 
 document.getElementById('modalDownloadQrBtn')?.addEventListener('click', function() {
@@ -478,7 +518,7 @@ document.getElementById('importBtn')?.addEventListener('click', async function()
             const qrData = JSON.stringify(pusData);
             const canvas = await generateQRCode(qrData, 300);
             const qrImageData = canvas.toDataURL('image/png');
-            batchQRs.push({ data: pusData, qrData, canvas, imageUrl: qrImageData });
+            batchQRs.push({ data: pusData, canvas, imageUrl: qrImageData });
             saveToLocalStorage(pusData);
         }
         
@@ -504,7 +544,7 @@ function displayBatchResults(qrs) {
         <div class="batch-item-modal">
             <div class="batch-info-modal">
                 <div class="batch-name-modal">${escapeHtml(qr.data.pusName)}</div>
-                <div class="batch-details-modal">ID: ${escapeHtml(qr.data.pusId)} | ${qr.data.offenseCategory}</div>
+                <div class="batch-details-modal">ID: ${escapeHtml(qr.data.pusId)} | ${escapeHtml(qr.data.offenseCategory)}</div>
             </div>
             <div class="batch-actions-modal">
                 <button class="btn-small" onclick="downloadSingleBatch(${index})">📥 QR</button>
@@ -517,10 +557,10 @@ function displayBatchResults(qrs) {
 
 window.downloadSingleBatch = function(index) { 
     const qr = batchQRs[index]; 
-    if(qr && qr.canvas){ 
+    if(qr){ 
         const link = document.createElement('a'); 
         link.download = `QR_${qr.data.pusId}_${qr.data.pusName.replace(/[^a-z0-9]/gi, '_')}.png`; 
-        link.href = qr.canvas.toDataURL('image/png'); 
+        link.href = qr.imageUrl;
         link.click(); 
     } 
 };
