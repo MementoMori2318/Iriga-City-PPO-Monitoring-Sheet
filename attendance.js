@@ -404,8 +404,8 @@ logoutBtn?.addEventListener('click', logout);
 
 // ============================================
 // STABLE QR CAMERA SCANNER
-// Downscaled processing + reused canvas + duplicate-scan
-// protection, optimized for repeated scanning on mobile.
+// Native BarcodeDetector (full camera resolution) with a
+// jsQR fallback, reused canvas, and duplicate-scan protection.
 // ============================================
 
 let videoStream = null;
@@ -425,10 +425,26 @@ let lastQRTime = 0;
 // older/mobile devices than scanning at full frame rate.
 const SCAN_INTERVAL = 120;
 
-// Camera frames are downscaled to this width before jsQR runs.
-// QR codes are still very readable at 640px, and this cuts
-// getImageData()/decode cost dramatically vs. full 1280x720.
-const MAX_SCAN_WIDTH = 640;
+// Native barcode detector, when the browser supports it. Reads the
+// video frame at full camera resolution with no manual downscaling —
+// downscaling was blurring out small/dense QR modules and preventing
+// detection. jsQR is used as the fallback when this isn't available.
+let barcodeDetector = null;
+let useNativeDetector = false;
+
+function initBarcodeDetector() {
+    if (barcodeDetector) return;
+    if (typeof window.BarcodeDetector === 'undefined') return;
+
+    try {
+        barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        useNativeDetector = true;
+    } catch (error) {
+        console.warn('Native BarcodeDetector unavailable, using jsQR:', error);
+        barcodeDetector = null;
+        useNativeDetector = false;
+    }
+}
 
 function initScanCanvas() {
     if (!scanCanvas) {
@@ -451,7 +467,9 @@ async function openScanner() {
         return;
     }
 
-    if (typeof jsQR !== 'function') {
+    initBarcodeDetector();
+
+    if (!useNativeDetector && typeof jsQR !== 'function') {
         showMessage('QR scanner library did not load. Check your internet connection and reload the page.', 'error');
         return;
     }
@@ -466,15 +484,16 @@ async function openScanner() {
     if (scannerModal) scannerModal.style.display = 'flex';
 
     try {
-        // MOBILE-FRIENDLY CAMERA SETTINGS
-        // 640x480 is enough for QR scanning and dramatically
-        // reduces CPU usage vs. requesting 1280x720.
+        // Use the camera's actual resolution, up to 1280x720.
+        // No manual downscaling is applied to the frame before
+        // detection — that was losing detail needed for small
+        // or dense QR codes.
         const constraints = {
             audio: false,
             video: {
                 facingMode: { ideal: 'environment' },
-                width:  { ideal: 640, max: 1280 },
-                height: { ideal: 480, max: 720 },
+                width:  { ideal: 1280, max: 1280 },
+                height: { ideal: 720,  max: 720 },
                 frameRate: { ideal: 24, max: 30 }
             }
         };
@@ -523,7 +542,7 @@ async function openScanner() {
         lastQRData = null;
         lastQRTime = 0;
 
-        requestAnimationFrame(scanQR);
+        scanQR();
 
     } catch (error) {
         console.error('Camera initialization error:', error);
@@ -551,11 +570,10 @@ async function openScanner() {
             await scannerVideo.play();
 
             scanning = true;
-            scannerStarting = false;
             lastQRData = null;
             lastQRTime = 0;
 
-            requestAnimationFrame(scanQR);
+            scanQR();
 
         } catch (fallbackError) {
             console.error('Fallback camera error:', fallbackError);
@@ -578,11 +596,7 @@ function waitForVideoReady() {
             return;
         }
 
-        if (
-            scannerVideo.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA &&
-            scannerVideo.videoWidth > 0 &&
-            scannerVideo.videoHeight > 0
-        ) {
+        if (scannerVideo.readyState >= HTMLMediaElement.HAVE_METADATA) {
             resolve();
             return;
         }
@@ -620,10 +634,41 @@ function waitForVideoReady() {
 }
 
 // ============================================
-// QR SCANNER LOOP
+// HANDLE A SUCCESSFULLY DECODED VALUE
+// Shared by both the native detector and jsQR paths.
 // ============================================
 
-function scanQR() {
+function handleDecodedValue(value) {
+    const now = Date.now();
+
+    // Ignore an accidental duplicate read of the same QR
+    // within a short window (e.g. jitter across two frames)
+    if (value === lastQRData && now - lastQRTime < 2000) {
+        scheduleNextScan();
+        return;
+    }
+
+    lastQRData = value;
+    lastQRTime = now;
+
+    scanning = false;
+    stopCamera();
+
+    if (scannerModal) scannerModal.style.display = 'none';
+
+    processQR(value);
+}
+
+// ============================================
+// QR SCANNER LOOP
+// Tries the native BarcodeDetector first (reads the video frame
+// at full camera resolution, no manual downscaling — downscaling
+// was blurring out small/dense QR codes). Falls back to jsQR,
+// also run at full resolution, when the native API is unavailable
+// or fails outright.
+// ============================================
+
+async function scanQR() {
     if (!scanning || !scannerVideo) return;
 
     if (scannerVideo.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
@@ -639,37 +684,29 @@ function scanQR() {
         return;
     }
 
-    initScanCanvas();
+    // ---- Native detector path ----
+    if (useNativeDetector && barcodeDetector) {
+        try {
+            const barcodes = await barcodeDetector.detect(scannerVideo);
+            if (!scanning) return; // scanner may have been closed while awaiting
 
-    // Downscale the camera image — QR codes stay readable at
-    // 640px wide and this cuts decode cost substantially.
-    let width = videoWidth;
-    let height = videoHeight;
+            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                handleDecodedValue(barcodes[0].rawValue);
+                return;
+            }
 
-    if (videoWidth > MAX_SCAN_WIDTH) {
-        const scale = MAX_SCAN_WIDTH / videoWidth;
-        width = Math.floor(videoWidth * scale);
-        height = Math.floor(videoHeight * scale);
+            scheduleNextScan();
+            return;
+        } catch (error) {
+            // Outright failure (not just "no code in this frame") —
+            // disable the native path for this session and fall
+            // through to jsQR below.
+            console.warn('BarcodeDetector failed, switching to jsQR:', error);
+            useNativeDetector = false;
+        }
     }
 
-    if (scanCanvas.width !== width || scanCanvas.height !== height) {
-        scanCanvas.width = width;
-        scanCanvas.height = height;
-    }
-
-    // NOTE: draw from scannerVideo (the actual <video> element),
-    // not an undefined `video` variable.
-    scanCtx.drawImage(scannerVideo, 0, 0, width, height);
-
-    let imageData;
-    try {
-        imageData = scanCtx.getImageData(0, 0, width, height);
-    } catch (error) {
-        console.warn('Unable to read camera frame:', error);
-        scheduleNextScan();
-        return;
-    }
-
+    // ---- jsQR fallback path (full resolution, no downscale) ----
     if (typeof jsQR !== 'function') {
         showMessage('QR scanner library not loaded.', 'error');
         scanning = false;
@@ -677,9 +714,27 @@ function scanQR() {
         return;
     }
 
+    initScanCanvas();
+
+    if (scanCanvas.width !== videoWidth || scanCanvas.height !== videoHeight) {
+        scanCanvas.width = videoWidth;
+        scanCanvas.height = videoHeight;
+    }
+
+    scanCtx.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
+
+    let imageData;
+    try {
+        imageData = scanCtx.getImageData(0, 0, videoWidth, videoHeight);
+    } catch (error) {
+        console.warn('Unable to read camera frame:', error);
+        scheduleNextScan();
+        return;
+    }
+
     let code = null;
     try {
-        code = jsQR(imageData.data, width, height, {
+        code = jsQR(imageData.data, videoWidth, videoHeight, {
             inversionAttempts: 'attemptBoth'
         });
     } catch (error) {
@@ -689,24 +744,7 @@ function scanQR() {
     }
 
     if (code && code.data) {
-        const now = Date.now();
-
-        // Ignore an accidental duplicate read of the same QR
-        // within a short window (e.g. jitter across two frames)
-        if (code.data === lastQRData && now - lastQRTime < 2000) {
-            scheduleNextScan();
-            return;
-        }
-
-        lastQRData = code.data;
-        lastQRTime = now;
-
-        scanning = false;
-        stopCamera();
-
-        if (scannerModal) scannerModal.style.display = 'none';
-
-        processQR(code.data);
+        handleDecodedValue(code.data);
         return;
     }
 
