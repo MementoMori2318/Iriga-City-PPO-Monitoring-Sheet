@@ -33,12 +33,12 @@ function cleanDocketNumber(id) {
  */
 function normalizeDate(dateStr) {
     if (!dateStr || dateStr === 'N/A' || dateStr === '') return '';
-    
+
     const str = String(dateStr).trim();
-    
+
     // Already in YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-    
+
     // MM/DD/YY with year threshold (00-29 = 2000s, 30-99 = 1900s)
     if (/^\d{2}\/\d{2}\/\d{2}$/.test(str)) {
         const parts = str.split('/');
@@ -46,19 +46,19 @@ function normalizeDate(dateStr) {
         year = year < 30 ? 2000 + year : 1900 + year;
         return `${year}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
     }
-    
+
     // MM/DD/YYYY
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
         const parts = str.split('/');
         return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
     }
-    
+
     // MM-DD-YYYY
     if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
         const parts = str.split('-');
         return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
     }
-    
+
     // Try parsing as Date
     try {
         const date = new Date(str);
@@ -71,7 +71,7 @@ function normalizeDate(dateStr) {
     } catch (e) {
         // ignore
     }
-    
+
     return str; // return original if can't parse
 }
 
@@ -81,17 +81,17 @@ function normalizeDate(dateStr) {
  */
 function calculateAge(dobStr) {
     if (!dobStr) return null;
-    
+
     try {
         const normalized = normalizeDate(dobStr);
         if (!normalized || normalized === 'N/A') return null;
-        
+
         const parts = normalized.split('-');
         if (parts.length !== 3) return null;
-        
+
         const birthDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
         if (isNaN(birthDate.getTime())) return null;
-        
+
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -120,10 +120,10 @@ function getAgeDisplay(dobStr) {
  */
 function formatDateDisplay(dateStr) {
     if (!dateStr || dateStr === 'N/A' || dateStr === '') return 'N/A';
-    
+
     const normalized = normalizeDate(dateStr);
     if (!normalized || normalized === 'N/A') return dateStr;
-    
+
     try {
         const parts = normalized.split('-');
         const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -278,8 +278,12 @@ let currentPUSData = null;
 let videoStream = null;
 let scanning = false;
 let scanTimeout = null;
-let scanCanvas = null;
-let scanContext = null;
+
+// Reusable canvas for QR scanning — avoids creating a new <canvas>
+// element on every animation frame (was causing GC pressure / camera
+// stutter after a few scan sessions on lower-end devices).
+const scanCanvas = document.createElement('canvas');
+const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
 
 // DOM Elements
 const loginSection = document.getElementById('loginSection');
@@ -312,13 +316,13 @@ function initGoogleSignIn() {
         callback: handleCredentialResponse,
         auto_select: false
     });
-    
+
     google.accounts.id.renderButton(
         document.getElementById('g_id_signin'),
-        { 
-            type: 'standard', 
-            theme: 'outline', 
-            size: 'large', 
+        {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
             text: 'signin_with',
             shape: 'rectangular',
             width: 280
@@ -330,22 +334,22 @@ function handleCredentialResponse(response) {
     try {
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
         const userEmail = payload.email;
-        
+
         if (AUTHORIZED_EMAILS.includes(userEmail)) {
             currentUser = {
                 email: userEmail,
                 name: payload.name,
                 picture: payload.picture
             };
-            
+
             userNameDisplay.textContent = currentUser.name || currentUser.email;
             userEmailDisplay.textContent = currentUser.email;
             if (currentUser.picture) userAvatar.src = currentUser.picture;
-            
+
             userInfo.style.display = 'flex';
             loginSection.style.display = 'none';
             mainContent.style.display = 'block';
-            
+
             localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
             showMessage(`Welcome, ${currentUser.name || currentUser.email}!`, 'success');
         } else {
@@ -365,7 +369,7 @@ function checkSession() {
     try {
         const saved = localStorage.getItem('loggedInUser');
         if (!saved) return;
-        
+
         const user = JSON.parse(saved);
         if (AUTHORIZED_EMAILS.includes(user.email)) {
             currentUser = user;
@@ -408,7 +412,9 @@ function logout() {
 logoutBtn?.addEventListener('click', logout);
 
 // ============================================
-// UPGRADED openScanner() with camera optimization
+// OPEN SCANNER (fixed: cooldown before re-acquiring camera,
+// invalid top-level focusMode constraint removed, advanced
+// constraints wrapped so failures there don't kill the stream)
 // ============================================
 
 async function openScanner() {
@@ -418,18 +424,30 @@ async function openScanner() {
         return;
     }
 
-    closeScanner();
     scannerModal.style.display = 'flex';
 
+    // Make sure any previous stream is fully torn down before requesting
+    // a new one. On many Android/iOS browsers the hardware camera takes
+    // a moment to release after track.stop() — reopening too fast can
+    // silently return a stale/frozen video stream that never produces
+    // fresh frames (looks like "the QR scanner stopped reading").
+    if (videoStream) {
+        closeScanner();
+    }
+    await new Promise(resolve => setTimeout(resolve, 250));
+
     try {
-        // Request best possible camera constraints for QR scanning
+        // NOTE: focusMode/zoom/exposureMode are NOT valid top-level
+        // constraints in most browsers — only request them via
+        // `advanced` after the stream starts, applied through
+        // applyConstraints(). Putting focusMode here could throw
+        // OverconstrainedError on some devices and silently force
+        // the low-quality fallback path every time.
         const constraints = {
             video: {
-                facingMode: { ideal: 'environment' },  // rear camera
+                facingMode: { ideal: 'environment' },
                 width:  { ideal: 1280 },
-                height: { ideal: 720 },
-                focusMode: { ideal: 'continuous' },     // continuous autofocus
-                advanced: [{ focusMode: 'continuous' }]
+                height: { ideal: 720 }
             }
         };
 
@@ -437,30 +455,32 @@ async function openScanner() {
         scannerVideo.srcObject = stream;
         videoStream = stream;
 
-        // Apply advanced track constraints after stream starts
+        // Apply advanced track constraints after stream starts.
+        // Wrapped in its own try/catch so a rejected advanced
+        // constraint (unsupported on this device) never tears
+        // down an otherwise-working stream.
         const [track] = stream.getVideoTracks();
         if (track) {
-            const capabilities = track.getCapabilities?.() || {};
+            try {
+                const capabilities = track.getCapabilities?.() || {};
+                const advancedConstraints = {};
 
-            const advancedConstraints = {};
+                if (capabilities.focusMode?.includes('continuous')) {
+                    advancedConstraints.focusMode = 'continuous';
+                }
+                if (capabilities.zoom) {
+                    advancedConstraints.zoom = capabilities.zoom.min;
+                }
+                if (capabilities.exposureMode?.includes('continuous')) {
+                    advancedConstraints.exposureMode = 'continuous';
+                }
 
-            // Enable continuous autofocus if supported
-            if (capabilities.focusMode?.includes('continuous')) {
-                advancedConstraints.focusMode = 'continuous';
-            }
-
-            // Maximize zoom out for wider QR detection range
-            if (capabilities.zoom) {
-                advancedConstraints.zoom = capabilities.zoom.min;
-            }
-
-            // Boost exposure for better contrast (helps QR scanning in dim light)
-            if (capabilities.exposureMode?.includes('continuous')) {
-                advancedConstraints.exposureMode = 'continuous';
-            }
-
-            if (Object.keys(advancedConstraints).length > 0) {
-                await track.applyConstraints({ advanced: [advancedConstraints] });
+                if (Object.keys(advancedConstraints).length > 0) {
+                    await track.applyConstraints({ advanced: [advancedConstraints] });
+                }
+            } catch (constraintErr) {
+                // Non-fatal: camera still works, just without the extra tuning.
+                console.warn('Advanced camera constraints not applied:', constraintErr);
             }
         }
 
@@ -470,8 +490,6 @@ async function openScanner() {
 
     } catch (err) {
         console.error('Camera error:', err);
-        closeScanner();
-        scannerModal.style.display = 'flex';
 
         // Fallback: try with minimal constraints if advanced ones failed
         try {
@@ -492,29 +510,26 @@ async function openScanner() {
 }
 
 // ============================================
-// UPGRADED scanQR() with throttling for performance
+// SCAN QR (fixed: reuses a single canvas instead of creating
+// a new one every frame; guards against zero-size frames)
 // ============================================
 
 function scanQR() {
     if (!scanning) return;
 
-    if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
-        const video = scannerVideo;
-        const maxScanSize = 800;
-        const scale = Math.min(1, maxScanSize / Math.max(video.videoWidth, video.videoHeight));
-        const canvasWidth = Math.max(1, Math.round(video.videoWidth * scale));
-        const canvasHeight = Math.max(1, Math.round(video.videoHeight * scale));
+    if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA
+        && scannerVideo.videoWidth > 0
+        && scannerVideo.videoHeight > 0) {
 
-        if (!scanCanvas) {
-            scanCanvas = document.createElement('canvas');
-            scanContext = scanCanvas.getContext('2d', { willReadFrequently: true });
+        if (scanCanvas.width !== scannerVideo.videoWidth ||
+            scanCanvas.height !== scannerVideo.videoHeight) {
+            scanCanvas.width  = scannerVideo.videoWidth;
+            scanCanvas.height = scannerVideo.videoHeight;
         }
-        scanCanvas.width = canvasWidth;
-        scanCanvas.height = canvasHeight;
 
-        scanContext.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+        scanCtx.drawImage(scannerVideo, 0, 0, scanCanvas.width, scanCanvas.height);
 
-        const imgData = scanContext.getImageData(0, 0, canvasWidth, canvasHeight);
+        const imgData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
 
         if (typeof jsQR !== 'function') {
             showMessage('QR scanner library not loaded.', 'error');
@@ -522,8 +537,8 @@ function scanQR() {
             return;
         }
 
-        const code = jsQR(imgData.data, canvasWidth, canvasHeight, {
-            inversionAttempts: 'attemptBoth'
+        const code = jsQR(imgData.data, scanCanvas.width, scanCanvas.height, {
+            inversionAttempts: 'dontInvert'  // faster — skips inverted QR attempts
         });
 
         if (code) {
@@ -620,13 +635,13 @@ function showMessage(msg, type) {
         if (m === '>') return '&gt;';
         return m;
     });
-    
+
     messageArea.innerHTML += `<div class="message message-${type}" data-id="${id}">${escapedMsg}</div>`;
-    
+
     setTimeout(() => {
         const el = messageArea.querySelector(`[data-id="${id}"]`);
         if (el) el.remove();
-        
+
         // Clean up empty container
         if (messageArea.children.length === 0) {
             messageArea.innerHTML = '';
@@ -653,17 +668,17 @@ async function submitAttendance(e) {
         showMessage('Please scan a QR code first.', 'error');
         return;
     }
-    
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
-    
+
     // Use universal date normalizer
     let calculatedAge = '';
     if (currentPUSData.dateOfBirth) {
         const age = calculateAge(currentPUSData.dateOfBirth);
         calculatedAge = age !== null ? age.toString() : '';
     }
-    
+
     const attendanceData = {
         employeeEmail: currentUser.email,
         clientName: currentPUSData.pusName || currentPUSData.clientName,
@@ -685,21 +700,21 @@ async function submitAttendance(e) {
         timestamp: new Date().toISOString(),
         qrSource: currentPUSData.source || 'json'
     };
-    
+
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
+
         await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify(attendanceData),
             signal: controller.signal
         });
-        
+
         clearTimeout(timeoutId);
         showMessage('✓ Attendance recorded successfully!', 'success');
-        
+
         setTimeout(() => {
             if (pusInfoSection) pusInfoSection.style.display = 'none';
             if (attendanceForm) attendanceForm.style.display = 'none';
