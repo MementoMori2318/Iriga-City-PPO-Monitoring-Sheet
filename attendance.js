@@ -451,6 +451,11 @@ async function openScanner() {
         return;
     }
 
+    if (typeof jsQR !== 'function') {
+        showMessage('QR scanner library did not load. Check your internet connection and reload the page.', 'error');
+        return;
+    }
+
     scannerStarting = true;
 
     // Make sure any previous camera is completely closed before
@@ -518,7 +523,7 @@ async function openScanner() {
         lastQRData = null;
         lastQRTime = 0;
 
-        scanQR();
+        requestAnimationFrame(scanQR);
 
     } catch (error) {
         console.error('Camera initialization error:', error);
@@ -546,10 +551,11 @@ async function openScanner() {
             await scannerVideo.play();
 
             scanning = true;
+            scannerStarting = false;
             lastQRData = null;
             lastQRTime = 0;
 
-            scanQR();
+            requestAnimationFrame(scanQR);
 
         } catch (fallbackError) {
             console.error('Fallback camera error:', fallbackError);
