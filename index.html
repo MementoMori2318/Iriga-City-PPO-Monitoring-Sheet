@@ -6,7 +6,6 @@
     <title>Iriga PPO - Attendance System</title>
     <link rel="stylesheet" href="style.css">
     <script src="dateHandler.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -140,11 +139,11 @@
     <!-- Scanner Modal -->
     <div id="scannerModal" class="scanner-modal">
         <button class="close-scanner" onclick="closeScanner()">✕ Close</button>
-        <video id="scannerVideo" autoplay playsinline></video>
+        <video id="scannerVideo" autoplay playsinline muted></video>
     </div>
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="qr-scanner.umd.min.js"></script>
     <script src="attendance.js"></script>
 </body>
 </html>
