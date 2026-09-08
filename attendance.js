@@ -403,66 +403,45 @@ function logout() {
 logoutBtn?.addEventListener('click', logout);
 
 // ============================================
-// STABLE QR CAMERA SCANNER
-// Native BarcodeDetector (full camera resolution) with a
-// jsQR fallback, reused canvas, and duplicate-scan protection.
+// QR CAMERA SCANNER
+// Uses the nimiq/qr-scanner library (worker-based decoding,
+// handles camera lifecycle, no manual frame-scanning loop needed).
+// https://github.com/nimiq/qr-scanner
 // ============================================
 
-let videoStream = null;
 let scanning = false;
-let scanTimeout = null;
-
-let scanCanvas = null;
-let scanCtx = null;
-
 let scannerStarting = false;
+let qrScannerInstance = null;
 
 // Prevent processing the same QR multiple times in a row
 let lastQRData = null;
 let lastQRTime = 0;
 
-// Scan approximately every 120ms (~8 FPS) — much easier on
-// older/mobile devices than scanning at full frame rate.
-const SCAN_INTERVAL = 120;
+// ============================================
+// HANDLE A SUCCESSFULLY DECODED VALUE
+// ============================================
 
-// Native barcode detector, when the browser supports it. Reads the
-// video frame at full camera resolution with no manual downscaling —
-// downscaling was blurring out small/dense QR modules and preventing
-// detection. jsQR is used as the fallback when this isn't available.
-//
-// KNOWN ISSUE: on some Android Chrome builds, BarcodeDetector exists
-// as an API but depends on an on-device Google Play Services "vision"
-// module that isn't always installed. When that module is missing,
-// detect() never throws — it just resolves with an empty array
-// forever, even with a QR code held right in front of the camera.
-// NATIVE_DETECT_TIMEOUT_MS guards against this: if the native
-// detector hasn't found anything within that window, we stop
-// trusting it and fall back to jsQR for the rest of the session.
-let barcodeDetector = null;
-let useNativeDetector = false;
-let nativeDetectStartTime = 0;
-const NATIVE_DETECT_TIMEOUT_MS = 2500;
+function handleDecodedValue(value) {
+    const now = Date.now();
 
-function initBarcodeDetector() {
-    if (barcodeDetector) return;
-    if (typeof window.BarcodeDetector === 'undefined') return;
-
-    try {
-        barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
-        useNativeDetector = true;
-        nativeDetectStartTime = 0;
-    } catch (error) {
-        console.warn('Native BarcodeDetector unavailable, using jsQR:', error);
-        barcodeDetector = null;
-        useNativeDetector = false;
+    // Ignore an accidental duplicate read of the same QR
+    // within a short window (e.g. jitter across two frames)
+    if (value === lastQRData && now - lastQRTime < 2000) {
+        return;
     }
-}
 
-function initScanCanvas() {
-    if (!scanCanvas) {
-        scanCanvas = document.createElement('canvas');
-        scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+    lastQRData = value;
+    lastQRTime = now;
+
+    scanning = false;
+
+    if (qrScannerInstance) {
+        qrScannerInstance.stop();
     }
+
+    if (scannerModal) scannerModal.style.display = 'none';
+
+    processQR(value);
 }
 
 // ============================================
@@ -479,73 +458,35 @@ async function openScanner() {
         return;
     }
 
-    initBarcodeDetector();
-
-    if (!useNativeDetector && typeof jsQR !== 'function') {
+    if (typeof QrScanner === 'undefined') {
         showMessage('QR scanner library did not load. Check your internet connection and reload the page.', 'error');
         return;
     }
 
     scannerStarting = true;
 
-    // Make sure any previous camera is completely closed before
-    // requesting a new one — reopening too fast can return a
-    // stale/frozen stream on some Android/iOS browsers.
-    stopCamera();
-
     if (scannerModal) scannerModal.style.display = 'flex';
 
     try {
-        // Use the camera's actual resolution, up to 1280x720.
-        // No manual downscaling is applied to the frame before
-        // detection — that was losing detail needed for small
-        // or dense QR codes.
-        const constraints = {
-            audio: false,
-            video: {
-                facingMode: { ideal: 'environment' },
-                width:  { ideal: 1280, max: 1280 },
-                height: { ideal: 720,  max: 720 },
-                frameRate: { ideal: 24, max: 30 }
-            }
-        };
+        // Reuse a single QrScanner instance across sessions instead of
+        // recreating it every time the scanner opens.
+        if (!qrScannerInstance) {
+            if (!scannerVideo) throw new Error('Scanner video element not found.');
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoStream = stream;
-
-        if (!scannerVideo) throw new Error('Scanner video element not found.');
-
-        scannerVideo.srcObject = stream;
-        scannerVideo.setAttribute('playsinline', '');
-        scannerVideo.setAttribute('autoplay', '');
-        scannerVideo.muted = true;
-
-        // Optional camera tuning — never fatal if unsupported
-        const [track] = stream.getVideoTracks();
-        if (track) {
-            try {
-                const capabilities = track.getCapabilities?.() || {};
-                const advanced = {};
-
-                if (capabilities.focusMode?.includes('continuous')) {
-                    advanced.focusMode = 'continuous';
+            qrScannerInstance = new QrScanner(
+                scannerVideo,
+                (result) => handleDecodedValue(result.data),
+                {
+                    preferredCamera: 'environment',
+                    highlightScanRegion: true,
+                    highlightCodeOutline: true,
+                    maxScansPerSecond: 10,
+                    returnDetailedScanResult: true
                 }
-                if (capabilities.exposureMode?.includes('continuous')) {
-                    advanced.exposureMode = 'continuous';
-                }
-                // Intentionally NOT touching zoom — some phones behave
-                // badly when zoom is repeatedly manipulated.
-
-                if (Object.keys(advanced).length > 0) {
-                    await track.applyConstraints({ advanced: [advanced] });
-                }
-            } catch (constraintError) {
-                console.warn('Optional camera settings unavailable:', constraintError);
-            }
+            );
         }
 
-        await waitForVideoReady();
-        await scannerVideo.play();
+        await qrScannerInstance.start();
 
         scanning = true;
         scannerStarting = false;
@@ -553,287 +494,15 @@ async function openScanner() {
         // Reset duplicate-scan protection for this session
         lastQRData = null;
         lastQRTime = 0;
-        nativeDetectStartTime = 0;
-
-        scanQR();
 
     } catch (error) {
         console.error('Camera initialization error:', error);
         scannerStarting = false;
-        stopCamera();
-
-        // FALLBACK: minimal constraints only
-        try {
-            showMessage('Trying basic camera mode...', 'info');
-
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({
-                audio: false,
-                video: { facingMode: 'environment' }
-            });
-
-            videoStream = fallbackStream;
-            if (!scannerVideo) throw new Error('Scanner video element not found.');
-
-            scannerVideo.srcObject = fallbackStream;
-            scannerVideo.setAttribute('playsinline', '');
-            scannerVideo.setAttribute('autoplay', '');
-            scannerVideo.muted = true;
-
-            await waitForVideoReady();
-            await scannerVideo.play();
-
-            scanning = true;
-            lastQRData = null;
-            lastQRTime = 0;
-            nativeDetectStartTime = 0;
-
-            scanQR();
-
-        } catch (fallbackError) {
-            console.error('Fallback camera error:', fallbackError);
-            scannerStarting = false;
-            stopCamera();
-            if (scannerModal) scannerModal.style.display = 'none';
-            showMessage('Unable to access camera. Please check camera permissions.', 'error');
-        }
-    }
-}
-
-// ============================================
-// WAIT UNTIL VIDEO HAS ACTUAL FRAMES
-// ============================================
-
-function waitForVideoReady() {
-    return new Promise((resolve, reject) => {
-        if (!scannerVideo) {
-            reject(new Error('Scanner video element not found.'));
-            return;
-        }
-
-        if (scannerVideo.readyState >= HTMLMediaElement.HAVE_METADATA) {
-            resolve();
-            return;
-        }
-
-        let finished = false;
-
-        const cleanup = () => {
-            scannerVideo.removeEventListener('loadedmetadata', onReady);
-            scannerVideo.removeEventListener('canplay', onReady);
-        };
-
-        const onReady = () => {
-            if (finished) return;
-            finished = true;
-            cleanup();
-            resolve();
-        };
-
-        scannerVideo.addEventListener('loadedmetadata', onReady);
-        scannerVideo.addEventListener('canplay', onReady);
-
-        // Safety timeout in case neither event fires
-        setTimeout(() => {
-            if (finished) return;
-            finished = true;
-            cleanup();
-
-            if (scannerVideo.videoWidth > 0 && scannerVideo.videoHeight > 0) {
-                resolve();
-            } else {
-                reject(new Error('Camera video did not become ready.'));
-            }
-        }, 5000);
-    });
-}
-
-// ============================================
-// HANDLE A SUCCESSFULLY DECODED VALUE
-// Shared by both the native detector and jsQR paths.
-// ============================================
-
-function handleDecodedValue(value) {
-    const now = Date.now();
-
-    // Ignore an accidental duplicate read of the same QR
-    // within a short window (e.g. jitter across two frames)
-    if (value === lastQRData && now - lastQRTime < 2000) {
-        scheduleNextScan();
-        return;
-    }
-
-    lastQRData = value;
-    lastQRTime = now;
-
-    scanning = false;
-    stopCamera();
-
-    if (scannerModal) scannerModal.style.display = 'none';
-
-    processQR(value);
-}
-
-// ============================================
-// QR SCANNER LOOP
-// Tries the native BarcodeDetector first (reads the video frame
-// at full camera resolution, no manual downscaling — downscaling
-// was blurring out small/dense QR codes). Falls back to jsQR,
-// also run at full resolution, when the native API is unavailable
-// or fails outright.
-// ============================================
-
-async function scanQR() {
-    if (!scanning || !scannerVideo) return;
-
-    if (scannerVideo.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
-        scheduleNextScan();
-        return;
-    }
-
-    const videoWidth = scannerVideo.videoWidth;
-    const videoHeight = scannerVideo.videoHeight;
-
-    if (videoWidth <= 0 || videoHeight <= 0) {
-        scheduleNextScan();
-        return;
-    }
-
-    // ---- Native detector path ----
-    if (useNativeDetector && barcodeDetector) {
-        if (!nativeDetectStartTime) nativeDetectStartTime = Date.now();
-
-        try {
-            const barcodes = await barcodeDetector.detect(scannerVideo);
-            if (!scanning) return; // scanner may have been closed while awaiting
-
-            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                handleDecodedValue(barcodes[0].rawValue);
-                return;
-            }
-
-            // Nothing found in this frame. On some Android Chrome builds
-            // the on-device barcode module isn't installed, and detect()
-            // will resolve empty forever without ever throwing — so a
-            // plain "no code yet, try again" isn't enough of a signal.
-            // If we've been trying for a while with zero hits, stop
-            // trusting the native path and drop straight into jsQR for
-            // this same frame instead of waiting for another failure.
-            if (Date.now() - nativeDetectStartTime > NATIVE_DETECT_TIMEOUT_MS) {
-                console.warn('Native BarcodeDetector found nothing after timeout; switching to jsQR.');
-                useNativeDetector = false;
-                // fall through to jsQR below
-            } else {
-                scheduleNextScan();
-                return;
-            }
-        } catch (error) {
-            // Outright failure (not just "no code in this frame") —
-            // disable the native path for this session and fall
-            // through to jsQR below.
-            console.warn('BarcodeDetector failed, switching to jsQR:', error);
-            useNativeDetector = false;
-        }
-    }
-
-    // ---- jsQR fallback path (full resolution, no downscale) ----
-    if (typeof jsQR !== 'function') {
-        showMessage('QR scanner library not loaded.', 'error');
         scanning = false;
-        stopCamera();
-        return;
-    }
 
-    initScanCanvas();
+        if (scannerModal) scannerModal.style.display = 'none';
 
-    if (scanCanvas.width !== videoWidth || scanCanvas.height !== videoHeight) {
-        scanCanvas.width = videoWidth;
-        scanCanvas.height = videoHeight;
-    }
-
-    scanCtx.drawImage(scannerVideo, 0, 0, videoWidth, videoHeight);
-
-    let imageData;
-    try {
-        imageData = scanCtx.getImageData(0, 0, videoWidth, videoHeight);
-    } catch (error) {
-        console.warn('Unable to read camera frame:', error);
-        scheduleNextScan();
-        return;
-    }
-
-    let code = null;
-    try {
-        code = jsQR(imageData.data, videoWidth, videoHeight, {
-            inversionAttempts: 'attemptBoth'
-        });
-    } catch (error) {
-        console.error('QR decoding error:', error);
-        scheduleNextScan();
-        return;
-    }
-
-    if (code && code.data) {
-        handleDecodedValue(code.data);
-        return;
-    }
-
-    scheduleNextScan();
-}
-
-// ============================================
-// SCHEDULE NEXT SCAN
-// ============================================
-
-function scheduleNextScan() {
-    if (!scanning) return;
-
-    if (scanTimeout) {
-        clearTimeout(scanTimeout);
-        scanTimeout = null;
-    }
-
-    scanTimeout = setTimeout(() => {
-        scanTimeout = null;
-        if (!scanning) return;
-        // requestAnimationFrame lets the browser sync with camera rendering
-        requestAnimationFrame(scanQR);
-    }, SCAN_INTERVAL);
-}
-
-// ============================================
-// STOP CAMERA
-// ============================================
-
-function stopCamera() {
-    scanning = false;
-
-    if (scanTimeout) {
-        clearTimeout(scanTimeout);
-        scanTimeout = null;
-    }
-
-    if (videoStream) {
-        try {
-            videoStream.getTracks().forEach(track => {
-                try {
-                    track.stop();
-                } catch (error) {
-                    console.warn('Unable to stop camera track:', error);
-                }
-            });
-        } catch (error) {
-            console.warn('Camera cleanup error:', error);
-        }
-        videoStream = null;
-    }
-
-    if (scannerVideo) {
-        try {
-            scannerVideo.pause();
-        } catch (error) {
-            // Ignore
-        }
-        scannerVideo.srcObject = null;
+        showMessage('Unable to access camera. Please check camera permissions.', 'error');
     }
 }
 
@@ -843,15 +512,19 @@ function stopCamera() {
 
 function closeScanner() {
     scannerStarting = false;
-    stopCamera();
+    scanning = false;
+
+    if (qrScannerInstance) {
+        qrScannerInstance.stop();
+    }
 
     if (scannerModal) scannerModal.style.display = 'none';
 
     // Reset duplicate protection so the next session starts clean
     lastQRData = null;
     lastQRTime = 0;
-    nativeDetectStartTime = 0;
 }
+
 
 // ============================================
 // PROCESS QR
