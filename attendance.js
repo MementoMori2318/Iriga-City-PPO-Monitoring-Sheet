@@ -278,6 +278,8 @@ let currentPUSData = null;
 let videoStream = null;
 let scanning = false;
 let scanTimeout = null;
+let scanCanvas = null;
+let scanContext = null;
 
 // DOM Elements
 const loginSection = document.getElementById('loginSection');
@@ -416,6 +418,7 @@ async function openScanner() {
         return;
     }
 
+    closeScanner();
     scannerModal.style.display = 'flex';
 
     try {
@@ -467,6 +470,8 @@ async function openScanner() {
 
     } catch (err) {
         console.error('Camera error:', err);
+        closeScanner();
+        scannerModal.style.display = 'flex';
 
         // Fallback: try with minimal constraints if advanced ones failed
         try {
@@ -494,17 +499,22 @@ function scanQR() {
     if (!scanning) return;
 
     if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
-        const canvas = document.createElement('canvas');
         const video = scannerVideo;
+        const maxScanSize = 800;
+        const scale = Math.min(1, maxScanSize / Math.max(video.videoWidth, video.videoHeight));
+        const canvasWidth = Math.max(1, Math.round(video.videoWidth * scale));
+        const canvasHeight = Math.max(1, Math.round(video.videoHeight * scale));
 
-        // Scan at native resolution for better QR detection
-        canvas.width  = video.videoWidth;
-        canvas.height = video.videoHeight;
+        if (!scanCanvas) {
+            scanCanvas = document.createElement('canvas');
+            scanContext = scanCanvas.getContext('2d', { willReadFrequently: true });
+        }
+        scanCanvas.width = canvasWidth;
+        scanCanvas.height = canvasHeight;
 
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(video, 0, 0);
+        scanContext.drawImage(video, 0, 0, canvasWidth, canvasHeight);
 
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const imgData = scanContext.getImageData(0, 0, canvasWidth, canvasHeight);
 
         if (typeof jsQR !== 'function') {
             showMessage('QR scanner library not loaded.', 'error');
@@ -512,8 +522,8 @@ function scanQR() {
             return;
         }
 
-        const code = jsQR(imgData.data, canvas.width, canvas.height, {
-            inversionAttempts: 'dontInvert'  // faster — skips inverted QR attempts
+        const code = jsQR(imgData.data, canvasWidth, canvasHeight, {
+            inversionAttempts: 'attemptBoth'
         });
 
         if (code) {
@@ -546,6 +556,7 @@ function closeScanner() {
     }
 
     if (scannerVideo) {
+        scannerVideo.pause();
         scannerVideo.srcObject = null;
     }
 
