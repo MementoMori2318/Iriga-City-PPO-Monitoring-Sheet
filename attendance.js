@@ -275,15 +275,6 @@ let APPS_SCRIPT_URL = savedUrl || APPS_SCRIPT_URL_DEFAULT;
 
 let currentUser = null;
 let currentPUSData = null;
-let videoStream = null;
-let scanning = false;
-let scanTimeout = null;
-
-// Reusable canvas for QR scanning — avoids creating a new <canvas>
-// element on every animation frame (was causing GC pressure / camera
-// stutter after a few scan sessions on lower-end devices).
-const scanCanvas = document.createElement('canvas');
-const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
 
 // DOM Elements
 const loginSection = document.getElementById('loginSection');
@@ -412,152 +403,335 @@ function logout() {
 logoutBtn?.addEventListener('click', logout);
 
 // ============================================
-// OPEN SCANNER (fixed: cooldown before re-acquiring camera,
-// invalid top-level focusMode constraint removed, advanced
-// constraints wrapped so failures there don't kill the stream)
+// STABLE QR CAMERA SCANNER
+// Downscaled processing + reused canvas + duplicate-scan
+// protection, optimized for repeated scanning on mobile.
+// ============================================
+
+let videoStream = null;
+let scanning = false;
+let scanTimeout = null;
+
+let scanCanvas = null;
+let scanCtx = null;
+
+let scannerStarting = false;
+
+// Prevent processing the same QR multiple times in a row
+let lastQRData = null;
+let lastQRTime = 0;
+
+// Scan approximately every 120ms (~8 FPS) — much easier on
+// older/mobile devices than scanning at full frame rate.
+const SCAN_INTERVAL = 120;
+
+// Camera frames are downscaled to this width before jsQR runs.
+// QR codes are still very readable at 640px, and this cuts
+// getImageData()/decode cost dramatically vs. full 1280x720.
+const MAX_SCAN_WIDTH = 640;
+
+function initScanCanvas() {
+    if (!scanCanvas) {
+        scanCanvas = document.createElement('canvas');
+        scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+    }
+}
+
+// ============================================
+// OPEN SCANNER
 // ============================================
 
 async function openScanner() {
+    // Prevent double camera initialization (e.g. double-tap on trigger)
+    if (scannerStarting || scanning) return;
+
     if (!APPS_SCRIPT_URL) {
         showMessage('Please configure Google Apps Script URL in Settings', 'error');
-        configSection.style.display = 'block';
+        if (configSection) configSection.style.display = 'block';
         return;
     }
 
-    scannerModal.style.display = 'flex';
+    scannerStarting = true;
 
-    // Make sure any previous stream is fully torn down before requesting
-    // a new one. On many Android/iOS browsers the hardware camera takes
-    // a moment to release after track.stop() — reopening too fast can
-    // silently return a stale/frozen video stream that never produces
-    // fresh frames (looks like "the QR scanner stopped reading").
-    if (videoStream) {
-        closeScanner();
-    }
-    await new Promise(resolve => setTimeout(resolve, 250));
+    // Make sure any previous camera is completely closed before
+    // requesting a new one — reopening too fast can return a
+    // stale/frozen stream on some Android/iOS browsers.
+    stopCamera();
+
+    if (scannerModal) scannerModal.style.display = 'flex';
 
     try {
-        // NOTE: focusMode/zoom/exposureMode are NOT valid top-level
-        // constraints in most browsers — only request them via
-        // `advanced` after the stream starts, applied through
-        // applyConstraints(). Putting focusMode here could throw
-        // OverconstrainedError on some devices and silently force
-        // the low-quality fallback path every time.
+        // MOBILE-FRIENDLY CAMERA SETTINGS
+        // 640x480 is enough for QR scanning and dramatically
+        // reduces CPU usage vs. requesting 1280x720.
         const constraints = {
+            audio: false,
             video: {
                 facingMode: { ideal: 'environment' },
-                width:  { ideal: 1280 },
-                height: { ideal: 720 }
+                width:  { ideal: 640, max: 1280 },
+                height: { ideal: 480, max: 720 },
+                frameRate: { ideal: 24, max: 30 }
             }
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        scannerVideo.srcObject = stream;
         videoStream = stream;
 
-        // Apply advanced track constraints after stream starts.
-        // Wrapped in its own try/catch so a rejected advanced
-        // constraint (unsupported on this device) never tears
-        // down an otherwise-working stream.
+        if (!scannerVideo) throw new Error('Scanner video element not found.');
+
+        scannerVideo.srcObject = stream;
+        scannerVideo.setAttribute('playsinline', '');
+        scannerVideo.setAttribute('autoplay', '');
+        scannerVideo.muted = true;
+
+        // Optional camera tuning — never fatal if unsupported
         const [track] = stream.getVideoTracks();
         if (track) {
             try {
                 const capabilities = track.getCapabilities?.() || {};
-                const advancedConstraints = {};
+                const advanced = {};
 
                 if (capabilities.focusMode?.includes('continuous')) {
-                    advancedConstraints.focusMode = 'continuous';
-                }
-                if (capabilities.zoom) {
-                    advancedConstraints.zoom = capabilities.zoom.min;
+                    advanced.focusMode = 'continuous';
                 }
                 if (capabilities.exposureMode?.includes('continuous')) {
-                    advancedConstraints.exposureMode = 'continuous';
+                    advanced.exposureMode = 'continuous';
                 }
+                // Intentionally NOT touching zoom — some phones behave
+                // badly when zoom is repeatedly manipulated.
 
-                if (Object.keys(advancedConstraints).length > 0) {
-                    await track.applyConstraints({ advanced: [advancedConstraints] });
+                if (Object.keys(advanced).length > 0) {
+                    await track.applyConstraints({ advanced: [advanced] });
                 }
-            } catch (constraintErr) {
-                // Non-fatal: camera still works, just without the extra tuning.
-                console.warn('Advanced camera constraints not applied:', constraintErr);
+            } catch (constraintError) {
+                console.warn('Optional camera settings unavailable:', constraintError);
             }
         }
 
+        await waitForVideoReady();
         await scannerVideo.play();
+
         scanning = true;
+        scannerStarting = false;
+
+        // Reset duplicate-scan protection for this session
+        lastQRData = null;
+        lastQRTime = 0;
+
         scanQR();
 
-    } catch (err) {
-        console.error('Camera error:', err);
+    } catch (error) {
+        console.error('Camera initialization error:', error);
+        scannerStarting = false;
+        stopCamera();
 
-        // Fallback: try with minimal constraints if advanced ones failed
+        // FALLBACK: minimal constraints only
         try {
-            showMessage('Retrying with basic camera...', 'info');
-            const stream = await navigator.mediaDevices.getUserMedia({
+            showMessage('Trying basic camera mode...', 'info');
+
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
                 video: { facingMode: 'environment' }
             });
-            scannerVideo.srcObject = stream;
-            videoStream = stream;
+
+            videoStream = fallbackStream;
+            if (!scannerVideo) throw new Error('Scanner video element not found.');
+
+            scannerVideo.srcObject = fallbackStream;
+            scannerVideo.setAttribute('playsinline', '');
+            scannerVideo.setAttribute('autoplay', '');
+            scannerVideo.muted = true;
+
+            await waitForVideoReady();
             await scannerVideo.play();
+
             scanning = true;
+            lastQRData = null;
+            lastQRTime = 0;
+
             scanQR();
-        } catch (fallbackErr) {
-            showMessage('Camera access denied. Please allow camera permissions.', 'error');
-            closeScanner();
+
+        } catch (fallbackError) {
+            console.error('Fallback camera error:', fallbackError);
+            scannerStarting = false;
+            stopCamera();
+            if (scannerModal) scannerModal.style.display = 'none';
+            showMessage('Unable to access camera. Please check camera permissions.', 'error');
         }
     }
 }
 
 // ============================================
-// SCAN QR (fixed: reuses a single canvas instead of creating
-// a new one every frame; guards against zero-size frames)
+// WAIT UNTIL VIDEO HAS ACTUAL FRAMES
+// ============================================
+
+function waitForVideoReady() {
+    return new Promise((resolve, reject) => {
+        if (!scannerVideo) {
+            reject(new Error('Scanner video element not found.'));
+            return;
+        }
+
+        if (
+            scannerVideo.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA &&
+            scannerVideo.videoWidth > 0 &&
+            scannerVideo.videoHeight > 0
+        ) {
+            resolve();
+            return;
+        }
+
+        let finished = false;
+
+        const cleanup = () => {
+            scannerVideo.removeEventListener('loadedmetadata', onReady);
+            scannerVideo.removeEventListener('canplay', onReady);
+        };
+
+        const onReady = () => {
+            if (finished) return;
+            finished = true;
+            cleanup();
+            resolve();
+        };
+
+        scannerVideo.addEventListener('loadedmetadata', onReady);
+        scannerVideo.addEventListener('canplay', onReady);
+
+        // Safety timeout in case neither event fires
+        setTimeout(() => {
+            if (finished) return;
+            finished = true;
+            cleanup();
+
+            if (scannerVideo.videoWidth > 0 && scannerVideo.videoHeight > 0) {
+                resolve();
+            } else {
+                reject(new Error('Camera video did not become ready.'));
+            }
+        }, 5000);
+    });
+}
+
+// ============================================
+// QR SCANNER LOOP
 // ============================================
 
 function scanQR() {
-    if (!scanning) return;
+    if (!scanning || !scannerVideo) return;
 
-    if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA
-        && scannerVideo.videoWidth > 0
-        && scannerVideo.videoHeight > 0) {
-
-        if (scanCanvas.width !== scannerVideo.videoWidth ||
-            scanCanvas.height !== scannerVideo.videoHeight) {
-            scanCanvas.width  = scannerVideo.videoWidth;
-            scanCanvas.height = scannerVideo.videoHeight;
-        }
-
-        scanCtx.drawImage(scannerVideo, 0, 0, scanCanvas.width, scanCanvas.height);
-
-        const imgData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-
-        if (typeof jsQR !== 'function') {
-            showMessage('QR scanner library not loaded.', 'error');
-            scanning = false;
-            return;
-        }
-
-        const code = jsQR(imgData.data, scanCanvas.width, scanCanvas.height, {
-            inversionAttempts: 'dontInvert'  // faster — skips inverted QR attempts
-        });
-
-        if (code) {
-            scanning = false;
-            closeScanner();
-            processQR(code.data);
-            return;
-        }
+    if (scannerVideo.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
+        scheduleNextScan();
+        return;
     }
 
-    // Throttle to ~15fps instead of 60fps — reduces CPU load, helps older phones
-    scanTimeout = setTimeout(() => requestAnimationFrame(scanQR), 66);
+    const videoWidth = scannerVideo.videoWidth;
+    const videoHeight = scannerVideo.videoHeight;
+
+    if (videoWidth <= 0 || videoHeight <= 0) {
+        scheduleNextScan();
+        return;
+    }
+
+    initScanCanvas();
+
+    // Downscale the camera image — QR codes stay readable at
+    // 640px wide and this cuts decode cost substantially.
+    let width = videoWidth;
+    let height = videoHeight;
+
+    if (videoWidth > MAX_SCAN_WIDTH) {
+        const scale = MAX_SCAN_WIDTH / videoWidth;
+        width = Math.floor(videoWidth * scale);
+        height = Math.floor(videoHeight * scale);
+    }
+
+    if (scanCanvas.width !== width || scanCanvas.height !== height) {
+        scanCanvas.width = width;
+        scanCanvas.height = height;
+    }
+
+    // NOTE: draw from scannerVideo (the actual <video> element),
+    // not an undefined `video` variable.
+    scanCtx.drawImage(scannerVideo, 0, 0, width, height);
+
+    let imageData;
+    try {
+        imageData = scanCtx.getImageData(0, 0, width, height);
+    } catch (error) {
+        console.warn('Unable to read camera frame:', error);
+        scheduleNextScan();
+        return;
+    }
+
+    if (typeof jsQR !== 'function') {
+        showMessage('QR scanner library not loaded.', 'error');
+        scanning = false;
+        stopCamera();
+        return;
+    }
+
+    let code = null;
+    try {
+        code = jsQR(imageData.data, width, height, {
+            inversionAttempts: 'attemptBoth'
+        });
+    } catch (error) {
+        console.error('QR decoding error:', error);
+        scheduleNextScan();
+        return;
+    }
+
+    if (code && code.data) {
+        const now = Date.now();
+
+        // Ignore an accidental duplicate read of the same QR
+        // within a short window (e.g. jitter across two frames)
+        if (code.data === lastQRData && now - lastQRTime < 2000) {
+            scheduleNextScan();
+            return;
+        }
+
+        lastQRData = code.data;
+        lastQRTime = now;
+
+        scanning = false;
+        stopCamera();
+
+        if (scannerModal) scannerModal.style.display = 'none';
+
+        processQR(code.data);
+        return;
+    }
+
+    scheduleNextScan();
 }
 
 // ============================================
-// CLOSE SCANNER
+// SCHEDULE NEXT SCAN
 // ============================================
 
-function closeScanner() {
+function scheduleNextScan() {
+    if (!scanning) return;
+
+    if (scanTimeout) {
+        clearTimeout(scanTimeout);
+        scanTimeout = null;
+    }
+
+    scanTimeout = setTimeout(() => {
+        scanTimeout = null;
+        if (!scanning) return;
+        // requestAnimationFrame lets the browser sync with camera rendering
+        requestAnimationFrame(scanQR);
+    }, SCAN_INTERVAL);
+}
+
+// ============================================
+// STOP CAMERA
+// ============================================
+
+function stopCamera() {
     scanning = false;
 
     if (scanTimeout) {
@@ -566,16 +740,43 @@ function closeScanner() {
     }
 
     if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
+        try {
+            videoStream.getTracks().forEach(track => {
+                try {
+                    track.stop();
+                } catch (error) {
+                    console.warn('Unable to stop camera track:', error);
+                }
+            });
+        } catch (error) {
+            console.warn('Camera cleanup error:', error);
+        }
         videoStream = null;
     }
 
     if (scannerVideo) {
-        scannerVideo.pause();
+        try {
+            scannerVideo.pause();
+        } catch (error) {
+            // Ignore
+        }
         scannerVideo.srcObject = null;
     }
+}
 
-    scannerModal.style.display = 'none';
+// ============================================
+// CLOSE SCANNER
+// ============================================
+
+function closeScanner() {
+    scannerStarting = false;
+    stopCamera();
+
+    if (scannerModal) scannerModal.style.display = 'none';
+
+    // Reset duplicate protection so the next session starts clean
+    lastQRData = null;
+    lastQRTime = 0;
 }
 
 // ============================================
