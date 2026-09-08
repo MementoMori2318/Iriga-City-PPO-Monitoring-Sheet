@@ -429,8 +429,19 @@ const SCAN_INTERVAL = 120;
 // video frame at full camera resolution with no manual downscaling —
 // downscaling was blurring out small/dense QR modules and preventing
 // detection. jsQR is used as the fallback when this isn't available.
+//
+// KNOWN ISSUE: on some Android Chrome builds, BarcodeDetector exists
+// as an API but depends on an on-device Google Play Services "vision"
+// module that isn't always installed. When that module is missing,
+// detect() never throws — it just resolves with an empty array
+// forever, even with a QR code held right in front of the camera.
+// NATIVE_DETECT_TIMEOUT_MS guards against this: if the native
+// detector hasn't found anything within that window, we stop
+// trusting it and fall back to jsQR for the rest of the session.
 let barcodeDetector = null;
 let useNativeDetector = false;
+let nativeDetectStartTime = 0;
+const NATIVE_DETECT_TIMEOUT_MS = 2500;
 
 function initBarcodeDetector() {
     if (barcodeDetector) return;
@@ -439,6 +450,7 @@ function initBarcodeDetector() {
     try {
         barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
         useNativeDetector = true;
+        nativeDetectStartTime = 0;
     } catch (error) {
         console.warn('Native BarcodeDetector unavailable, using jsQR:', error);
         barcodeDetector = null;
@@ -541,6 +553,7 @@ async function openScanner() {
         // Reset duplicate-scan protection for this session
         lastQRData = null;
         lastQRTime = 0;
+        nativeDetectStartTime = 0;
 
         scanQR();
 
@@ -572,6 +585,7 @@ async function openScanner() {
             scanning = true;
             lastQRData = null;
             lastQRTime = 0;
+            nativeDetectStartTime = 0;
 
             scanQR();
 
@@ -686,6 +700,8 @@ async function scanQR() {
 
     // ---- Native detector path ----
     if (useNativeDetector && barcodeDetector) {
+        if (!nativeDetectStartTime) nativeDetectStartTime = Date.now();
+
         try {
             const barcodes = await barcodeDetector.detect(scannerVideo);
             if (!scanning) return; // scanner may have been closed while awaiting
@@ -695,8 +711,21 @@ async function scanQR() {
                 return;
             }
 
-            scheduleNextScan();
-            return;
+            // Nothing found in this frame. On some Android Chrome builds
+            // the on-device barcode module isn't installed, and detect()
+            // will resolve empty forever without ever throwing — so a
+            // plain "no code yet, try again" isn't enough of a signal.
+            // If we've been trying for a while with zero hits, stop
+            // trusting the native path and drop straight into jsQR for
+            // this same frame instead of waiting for another failure.
+            if (Date.now() - nativeDetectStartTime > NATIVE_DETECT_TIMEOUT_MS) {
+                console.warn('Native BarcodeDetector found nothing after timeout; switching to jsQR.');
+                useNativeDetector = false;
+                // fall through to jsQR below
+            } else {
+                scheduleNextScan();
+                return;
+            }
         } catch (error) {
             // Outright failure (not just "no code in this frame") —
             // disable the native path for this session and fall
@@ -821,6 +850,7 @@ function closeScanner() {
     // Reset duplicate protection so the next session starts clean
     lastQRData = null;
     lastQRTime = 0;
+    nativeDetectStartTime = 0;
 }
 
 // ============================================
